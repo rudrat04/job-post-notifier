@@ -29,6 +29,10 @@ const filtersSchema = z.object({
   exclude_description: z.array(z.string()).default([]),
   /** If non-empty, the title or description must match at least one. */
   include_keywords: z.array(z.string()).default([]),
+  /** Drop jobs posted more than this many days ago. Omit or set 0 to disable. */
+  max_age_days: z.number().nonnegative().default(0),
+  /** Keep jobs whose posting date is unknown (some boards don't publish one). */
+  keep_undated: z.boolean().default(true),
   locations: z.object({
     /** On-site/hybrid locations that are always accepted. */
     cities: z.array(z.string()).default([]),

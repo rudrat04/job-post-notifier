@@ -20,11 +20,17 @@ export function buildMatcher(filters: Filters) {
   const cities = anyOf(filters.locations.cities);
   const regions = anyOf(filters.locations.remote_regions);
   const loc = filters.locations;
+  const maxAgeMs = filters.max_age_days * 86_400_000;
 
-  return function match(job: Job): MatchedJob | null {
+  return function match(job: Job, now = Date.now()): MatchedJob | null {
     const title = normalize(job.title);
     const desc = normalize(job.description ?? "");
     const location = normalize(job.location);
+
+    if (maxAgeMs) {
+      const posted = job.postedAt ? Date.parse(job.postedAt) : NaN;
+      if (Number.isNaN(posted) ? !filters.keep_undated : now - posted > maxAgeMs) return null;
+    }
 
     if (!titles.test(title)) return null;
     if (excludeTitle?.test(title)) return null;

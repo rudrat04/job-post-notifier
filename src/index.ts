@@ -26,7 +26,7 @@ async function main() {
         try {
           const company = await resolveCompany(entry);
           const jobs = await fetchJobs(company);
-          const matched = jobs.map(match).filter((j): j is MatchedJob => j !== null);
+          const matched = jobs.map((j) => match(j)).filter((j): j is MatchedJob => j !== null);
           console.log(`${company.name} [${company.ats}/${company.slug}]: ${jobs.length} jobs, ${matched.length} match`);
           return matched;
         } catch (err) {

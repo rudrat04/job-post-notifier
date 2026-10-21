@@ -32,6 +32,12 @@ exclude_description: []
 # If set, the title or description must mention at least one of these.
 include_keywords: []
 
+# Only keep jobs posted within the last N days (0 = no limit). Dates come from the
+# job board; Workable only gives a calendar date, so it can lag by up to a day.
+max_age_days: 2
+# Some boards publish no posting date; keep those anyway?
+keep_undated: true
+
 locations:
   # On-site or hybrid jobs in these places are always kept.
   cities:

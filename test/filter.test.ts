@@ -76,3 +76,21 @@ describe("locations", () => {
     expect(match(job("Chief of Staff", ""))?.locationMissing).toBe(true);
   });
 });
+
+describe("recency", () => {
+  const now = Date.parse("2026-10-21T12:00:00Z");
+  const ago = (hours: number) => new Date(now - hours * 3_600_000).toISOString();
+
+  it("keeps jobs inside the window", () => {
+    expect(match(job("Chief of Staff", "Mumbai", { postedAt: ago(1) }), now)).not.toBeNull();
+    expect(match(job("Chief of Staff", "Mumbai", { postedAt: ago(47) }), now)).not.toBeNull();
+  });
+
+  it("drops jobs older than max_age_days", () => {
+    expect(match(job("Chief of Staff", "Mumbai", { postedAt: ago(49) }), now)).toBeNull();
+  });
+
+  it("keeps undated jobs when keep_undated is true", () => {
+    expect(match(job("Chief of Staff", "Mumbai"), now)).not.toBeNull();
+  });
+});
