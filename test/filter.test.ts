@@ -68,17 +68,33 @@ describe("titles", () => {
     "Business Development Manager",
     "Sales Business Development Manager",
     "Email Marketing Operations Assistant",
+    "Strategic HR Business Partner",
+    "Talent Partner / Founders office - TA",
+    "Technical Marketing Engineer",
+    "Engineer - Sales",
+    "FP&A Manager – Revenue Operations",
+    "Bangalore Career Fair - Sales Enablement Specialist",
   ])("drops %s", (title) => {
     expect(match(job(title, "Mumbai"))).toBeNull();
   });
 
-  it("drops jobs asking for 5+ years", () => {
+  it("drops jobs asking for more than 3 years", () => {
     const d = (description: string) => match(job("RevOps Manager", "Mumbai", { description }));
     expect(d("You have 6+ years of experience in sales ops")).toBeNull();
     expect(d("5-8 years of experience")).toBeNull();
+    expect(d("4 to 6 years in RevOps")).toBeNull();
     expect(d("Minimum 7 years in RevOps")).toBeNull();
+    expect(d("At least 4 years")).toBeNull();
     expect(d("1-3 years of experience")).not.toBeNull();
+    expect(d("2-5 years of experience")).not.toBeNull();
     expect(d("2+ years of experience")).not.toBeNull();
+    expect(d("No experience stated")).not.toBeNull();
+  });
+
+  it("reads required experience from Naukri links", () => {
+    const u = (url: string) => match(job("RevOps Manager", "Mumbai", { url }));
+    expect(u("https://www.naukri.com/job-listings-revops-acme-mumbai-8-to-13-years-211")).toBeNull();
+    expect(u("https://www.naukri.com/job-listings-revops-acme-mumbai-1-to-3-years-211")).not.toBeNull();
   });
 });
 

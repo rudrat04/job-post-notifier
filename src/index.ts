@@ -4,6 +4,7 @@ import { resolveCompany } from "./detect";
 import { buildDigest, sendEmail } from "./email";
 import { buildMatcher } from "./filter";
 import { fetchJobs } from "./sources";
+import { findJobspy } from "./sources/jobspy";
 import { planSearches } from "./sources/search";
 import { contentId, mergeDuplicates } from "./dedupe";
 import { createStore } from "./store";
@@ -25,6 +26,7 @@ async function main() {
   const companies = [...manual.companies, ...discovered.companies];
   const match = buildMatcher(filters);
   const limit = pLimit(6);
+  const scraperLimit = pLimit(2);
   const failures: SourceFailure[] = [];
   let checked = 0;
 
@@ -46,11 +48,14 @@ async function main() {
     }),
   );
 
-  const { tasks, skipped } = search ? planSearches(search, filters.max_age_days) : { tasks: [], skipped: [] };
+  const jobspyBin = search?.jobspy ? await findJobspy() : null;
+  const { tasks, skipped } = search
+    ? planSearches(search, filters.max_age_days, process.env, jobspyBin)
+    : { tasks: [], skipped: [] };
   for (const name of skipped) console.warn(`Skipping ${name}`);
 
   const fromSearch = tasks.map((task) =>
-    limit(async () => {
+    (task.group === "jobspy" ? scraperLimit : limit)(async () => {
       try {
         const jobs = await task.run();
         const matched = jobs.map((j) => match(j)).filter((j): j is MatchedJob => j !== null);

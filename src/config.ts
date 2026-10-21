@@ -33,6 +33,11 @@ const filtersSchema = z
   exclude_title: z.array(z.string()).default([]),
   /** Reject a job whose description matches any of these. */
   exclude_description: z.array(z.string()).default([]),
+  /**
+   * Drop jobs whose stated minimum experience is above this many years. Read from the
+   * description ("5+ years", "4-6 years") and from Naukri links ("8-to-13-years"). 0 = off.
+   */
+  max_experience_years: z.number().nonnegative().default(0),
   /** If non-empty, the title or description must match at least one. */
   include_keywords: z.array(z.string()).default([]),
   /** Drop jobs posted more than this many days ago. Omit or set 0 to disable. */
@@ -64,6 +69,17 @@ const searchSchema = z.object({
   adzuna: whereList.optional(),
   /** Needs JOOBLE_API_KEY. */
   jooble: whereList.optional(),
+  /** Scrapes LinkedIn, Naukri and Indeed via the JobSpy CLI; skipped if it isn't installed. */
+  jobspy: z
+    .object({
+      sites: z.array(z.enum(["linkedin", "naukri", "indeed", "glassdoor", "google"])).min(1),
+      queries: z.array(z.string()).min(1),
+      where: z.array(z.string()).min(1),
+      /** Also run each query as a remote-only search in India. */
+      remote_india: z.boolean().default(true),
+      results_per_site: z.number().int().positive().default(20),
+    })
+    .optional(),
   /** Needs RAPIDAPI_KEY. Own query list and a request cap, as the free tier is small. */
   jsearch: z
     .object({

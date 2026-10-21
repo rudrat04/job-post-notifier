@@ -103,3 +103,34 @@ describe("aggregator adapters", () => {
     expect(await searchAdzuna({ appId: "i", appKey: "k" }, "x", "Mumbai", 2)).toEqual([]);
   });
 });
+
+describe("JobSpy", () => {
+  it("parses JSON lines and skips bad ones", async () => {
+    const { parseJobspyLines } = await import("../src/sources/jobspy");
+    const jobs = parseJobspyLines(
+      [
+        JSON.stringify({ site: "linkedin", title: "Sales Enablement Manager", company: "Acme Pvt Ltd", location: "Mumbai Metropolitan Region", date_posted: "2026-10-21", is_remote: false, job_url: "https://linkedin.com/jobs/view/1" }),
+        "not json",
+        JSON.stringify({ title: "No url" }),
+        JSON.stringify({ site: "naukri", title: "RevOps Lead", company: "Beta", location: "Pune", is_remote: true, job_url: "https://naukri.com/2" }),
+        "",
+      ].join("\n"),
+    );
+    expect(jobs).toHaveLength(2);
+    expect(jobs[0]).toMatchObject({ company: "Acme Pvt Ltd", source: "jobspy", location: "Mumbai Metropolitan Region", postedAt: "2026-10-21" });
+    expect(jobs[1]).toMatchObject({ remote: true, location: "Remote (Pune)" });
+  });
+
+  it("is skipped when the CLI isn't installed, planned when it is", () => {
+    const cfg: SearchConfig = {
+      queries: ["x"],
+      jobspy: { sites: ["linkedin"], queries: ["a", "b"], where: ["Mumbai", "Pune"], remote_india: true, results_per_site: 10 },
+    };
+    const missing = planSearches(cfg, 2, {}, null);
+    expect(missing.tasks).toHaveLength(0);
+    expect(missing.skipped[0]).toMatch(/JobSpy/);
+    const present = planSearches(cfg, 2, {}, "jobspy");
+    expect(present.tasks).toHaveLength(6); // (2 cities + remote India) × 2 queries
+    expect(present.tasks.every((t) => t.group === "jobspy")).toBe(true);
+  });
+});

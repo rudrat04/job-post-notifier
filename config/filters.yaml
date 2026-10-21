@@ -77,6 +77,18 @@ exclude_title:
   - mechanical
   - electrical
   - civil
+  # HR, finance and sales-floor roles that share a keyword
+  - hr
+  - human resources
+  - recruit(?:er|ing|ment)?
+  - talent
+  - career fair
+  - fp&a
+  - finance
+  - accountant
+  - inside sales
+  - technical marketing
+  - ^engineer[\s\-–,]+(?:inside\s+)?sales
   # pre-sales / support engineering
   - sales engineer
   - solutions? engineer
@@ -85,12 +97,13 @@ exclude_title:
   - developer
   - designer
 
-# Drop a job if its description asks for 5+ years of experience.
-exclude_description:
-  - (?:[5-9]|1\d)\s*\+\s*years
-  - (?:[5-9]|1\d)\s*(?:-|–|to)\s*\d+\s*years
-  - minimum (?:of )?(?:[5-9]|1\d) years
-  - at least (?:[5-9]|1\d) years
+# Drop a job if its description matches any of these (keep this list short).
+exclude_description: []
+
+# Drop jobs asking for more than this many years of experience (0 = off). Read from
+# the description ("5+ years", "4-6 years") and from Naukri links ("8-to-13-years").
+# A range counts by its lower end, so "2-5 years" still passes at 3.
+max_experience_years: 3
 
 # If set, the title or description must mention at least one of these.
 include_keywords: []

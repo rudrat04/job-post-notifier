@@ -1,10 +1,13 @@
 import type { SearchConfig } from "../config";
 import type { Job } from "../types";
 import { searchAdzuna, searchJooble, searchJSearch } from "./aggregators";
+import { searchJobspy } from "./jobspy";
 import { searchWorkable } from "./workable-search";
 
 export interface SearchTask {
   label: string;
+  /** Scraper runs are slow and easily rate-limited, so they get a lower concurrency. */
+  group?: "jobspy";
   run: () => Promise<Job[]>;
 }
 
@@ -16,6 +19,7 @@ export function planSearches(
   search: SearchConfig,
   dayRange: number,
   env: NodeJS.ProcessEnv = process.env,
+  jobspyBin: string | null = null,
 ): { tasks: SearchTask[]; skipped: string[] } {
   const tasks: SearchTask[] = [];
   const skipped: string[] = [];
@@ -54,6 +58,32 @@ export function planSearches(
       const all = search.jsearch.where.flatMap((where) => search.jsearch!.queries.map((q) => ({ q, where })));
       for (const { q, where } of all.slice(0, search.jsearch.max_requests))
         tasks.push({ label: `JSearch "${q}" in ${where}`, run: () => searchJSearch(key, q, where, dayRange) });
+    }
+  }
+
+  if (search.jobspy) {
+    const js = search.jobspy;
+    if (!jobspyBin) skipped.push("JobSpy (pip install python-jobspy==1.4.0)");
+    else {
+      const places = [
+        ...js.where.map((where) => ({ where, remote: false })),
+        ...(js.remote_india ? [{ where: "India", remote: true }] : []),
+      ];
+      for (const { where, remote } of places)
+        for (const q of js.queries)
+          tasks.push({
+            label: `JobSpy "${q}" in ${where}${remote ? " (remote)" : ""}`,
+            group: "jobspy",
+            run: () =>
+              searchJobspy(jobspyBin, {
+                sites: js.sites,
+                query: q,
+                where,
+                remote,
+                hoursOld: Math.ceil(dayRange * 24),
+                results: js.results_per_site,
+              }),
+          });
     }
   }
 

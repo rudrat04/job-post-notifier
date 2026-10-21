@@ -27,6 +27,8 @@ With `onboarding@resend.dev` as the sender, Resend only delivers to the address 
 - **Workable** covers every company hiring through Workable. It needs no key.
 - **Adzuna** (`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`), **Jooble** (`JOOBLE_API_KEY`) and **JSearch** (`RAPIDAPI_KEY`) are aggregators. Add the free keys to `.env` and to the GitHub secrets. A source without its key is skipped with a note in the log.
 
+- **JobSpy** scrapes LinkedIn, Naukri and Indeed through the open-source [JobSpy](https://github.com/speedyapply/JobSpy) CLI, pinned to 1.4.0. Locally, install it with `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`. These sites forbid scraping and may block GitHub's servers; a blocked site is listed under "couldn't check" and the rest of the run carries on.
+
 The same role found on several sites is emailed once, matched on company and title.
 
 For employers' own boards, `npm run discover` reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes.

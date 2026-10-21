@@ -20,7 +20,7 @@ export function contentId(company: string, title: string): string {
   return createHash("sha1").update(`${c}|${norm(title)}`).digest("hex");
 }
 
-const AGGREGATORS: Source[] = ["adzuna", "jooble", "jsearch"];
+const AGGREGATORS: Source[] = ["adzuna", "jooble", "jsearch", "jobspy"];
 
 /** Collapses duplicate jobs, joining their locations and preferring the employer's own link. */
 export function mergeDuplicates<T extends Job>(jobs: T[]): T[] {

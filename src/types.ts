@@ -1,6 +1,6 @@
 export type Ats = "greenhouse" | "lever" | "ashby" | "workable";
 /** Where a job came from: an employer's own job board, or a keyword-search aggregator. */
-export type Source = Ats | "adzuna" | "jooble" | "jsearch";
+export type Source = Ats | "adzuna" | "jooble" | "jsearch" | "jobspy";
 
 export interface CompanyEntry {
   url: string;

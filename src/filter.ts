@@ -12,6 +12,20 @@ function anyOf(patterns: string[]): RegExp | null {
 // Words that only say "remote" and name no country or region.
 const REMOTE_ONLY = /\b(?:remote|anywhere|worldwide|global|work from home|wfh|fully|first|only|distributed)\b|[-–—,()/|:;.\s]/gi;
 
+const YEARS_PATTERNS = [
+  /(\d{1,2})\s*\+\s*(?:years|yrs)/i,
+  /(\d{1,2})\s*(?:-|–|to)\s*\d{1,2}\s*(?:years|yrs)/i,
+  /(?:minimum|min\.?|at least)\s*(?:of\s*)?(\d{1,2})\s*(?:years|yrs)/i,
+];
+
+/** The smallest number of years of experience the posting asks for, if it says. */
+export function minExperienceYears(job: Pick<Job, "url" | "description">): number | null {
+  const fromUrl = job.url.match(/(\d{1,2})-to-\d{1,2}-years/i);
+  if (fromUrl) return Number(fromUrl[1]);
+  const found = YEARS_PATTERNS.map((re) => job.description?.match(re)?.[1]).filter(Boolean).map(Number);
+  return found.length ? Math.min(...found) : null;
+}
+
 export function buildMatcher(filters: Filters) {
   const titles = anyOf(filters.titles);
   const combos = filters.title_combos.map((groups) => groups.map((g) => anyOf(g)!));
@@ -38,6 +52,10 @@ export function buildMatcher(filters: Filters) {
     if (excludeTitle?.test(title)) return null;
     if (excludeDesc?.test(desc)) return null;
     if (include && !include.test(title) && !include.test(desc)) return null;
+    if (filters.max_experience_years) {
+      const years = minExperienceYears(job);
+      if (years !== null && years > filters.max_experience_years) return null;
+    }
 
     if (!location.trim()) {
       return loc.keep_missing ? { ...job, locationMissing: true } : null;

@@ -45,3 +45,22 @@ jsearch:
     - product marketing
   where: [India]
   max_requests: 3
+
+# Scrapes LinkedIn, Naukri and Indeed with the open-source JobSpy CLI
+# (pip install python-jobspy==1.4.0). Skipped if it isn't installed. Those sites
+# forbid scraping and may block GitHub's servers; a blocked site is reported
+# under "couldn't check" and the rest of the run carries on.
+jobspy:
+  sites: [linkedin, naukri, indeed]
+  queries:
+    - gtm
+    - gtm engineer
+    - revenue operations
+    - sales operations
+    - marketing operations
+    - product marketing
+    - chief of staff
+    - founders office
+  where: [Mumbai, Bengaluru, Pune]
+  remote_india: true
+  results_per_site: 20
