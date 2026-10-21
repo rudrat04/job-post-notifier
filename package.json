@@ -1,0 +1,29 @@
+{
+  "name": "job-post-notifier",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Checks ATS job feeds for matching roles and emails a digest of new postings.",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "dry-run": "node --env-file-if-exists=.env --import tsx src/index.ts --dry-run",
+    "bootstrap": "node --env-file-if-exists=.env --import tsx src/index.ts --bootstrap",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "p-limit": "^7.3.3",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

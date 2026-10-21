@@ -1,0 +1,23 @@
+# Paste career page URLs here. The ATS is detected automatically from the URL,
+# or from the page's HTML if it's the company's own careers page.
+#
+# Formats:
+#   - https://jobs.lever.co/cred
+#   - url: https://careers.example.com
+#     name: Example           # optional display name
+#   - url: https://careers.example.com
+#     ats: greenhouse          # optional: skip detection
+#     slug: example
+#
+# The entries below are working examples; replace them with your own list.
+companies:
+  - url: https://job-boards.greenhouse.io/groww
+    name: Groww
+  - url: https://jobs.lever.co/cred
+    name: CRED
+  - url: https://jobs.lever.co/meesho
+    name: Meesho
+  - url: https://jobs.lever.co/zeta
+    name: Zeta
+  - url: https://jobs.ashbyhq.com/sarvam
+    name: Sarvam AI

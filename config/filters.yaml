@@ -1,0 +1,51 @@
+# Every entry is a case-insensitive regex fragment, matched as a whole word or phrase.
+
+# A job title must match at least one of these.
+titles:
+  - chief of staff
+  - founder'?s'? office
+  - office of (?:the )?(?:founders?|ceo)
+  - founder'?s'? associate
+  - founding associate
+  - associate to (?:the )?(?:founders?|ceo)
+  - gtm
+  - go[- ]to[- ]market
+  - growth
+  - business operations
+  - strategy (?:&|and) operations
+
+# Drop a job if its title matches any of these.
+exclude_title:
+  - intern(?:ship)?
+  - engineer(?:ing)?
+  - developer
+  - designer
+  - data scientist
+  - vp
+  - vice president
+  - head of
+  - director
+
+# Drop a job if its description matches any of these (keep this list short).
+exclude_description: []
+
+# If set, the title or description must mention at least one of these.
+include_keywords: []
+
+locations:
+  # On-site or hybrid jobs in these places are always kept.
+  cities:
+    - mumbai
+    - bombay
+    - navi mumbai
+    - thane
+  # Remote jobs limited to these regions are kept.
+  remote_regions:
+    - india
+    - apac
+    - asia
+    - ist
+  # Keep remote jobs that name no country at all ("Remote", "Anywhere").
+  remote_anywhere: true
+  # Keep jobs with no location listed; they're flagged in the email.
+  keep_missing: true
