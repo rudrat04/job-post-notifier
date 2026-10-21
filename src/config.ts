@@ -20,9 +20,15 @@ const companiesSchema = z.object({
     .min(1),
 });
 
-const filtersSchema = z.object({
+const filtersSchema = z
+  .object({
   /** Regex fragments; a job title must match at least one (word-bounded, case-insensitive). */
-  titles: z.array(z.string()).min(1),
+  titles: z.array(z.string()).default([]),
+  /**
+   * Mix-and-match titles. Each combo is a list of word groups; a title matches
+   * a combo when it contains at least one word from EVERY group, in any order.
+   */
+  title_combos: z.array(z.array(z.array(z.string()).min(1)).min(2)).default([]),
   /** Reject a job whose title matches any of these. */
   exclude_title: z.array(z.string()).default([]),
   /** Reject a job whose description matches any of these. */
@@ -43,7 +49,10 @@ const filtersSchema = z.object({
     /** Keep jobs that have no location listed (they are flagged in the email). */
     keep_missing: z.boolean().default(true),
   }),
-});
+ })
+  .refine((f) => f.titles.length > 0 || f.title_combos.length > 0, {
+    message: "Set at least one of titles or title_combos",
+  });
 
 export type Filters = z.infer<typeof filtersSchema>;
 export type CompaniesConfig = z.infer<typeof companiesSchema>;

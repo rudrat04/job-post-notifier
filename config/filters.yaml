@@ -1,33 +1,95 @@
 # Every entry is a case-insensitive regex fragment, matched as a whole word or phrase.
+# Tuned for ~2 years of experience: GTM engineering, GTM strategy, product marketing,
+# RevOps, sales-process/automation roles, chief of staff and founder's office.
 
-# A job title must match at least one of these.
+# A job title matching ANY of these is kept.
 titles:
+  # Chief of staff / founder's office
   - chief of staff
   - founder'?s'? office
   - office of (?:the )?(?:founders?|ceo)
   - founder'?s'? associate
   - founding associate
   - associate to (?:the )?(?:founders?|ceo)
+  - special projects
+  # GTM
   - gtm
   - go[- ]to[- ]market
-  - growth
-  - business operations
+  # Product marketing
+  - product marketing
+  - pmm
+  # Revenue / sales / marketing operations
+  - rev ?ops
+  - revenue (?:operations|ops)
+  - sales (?:operations|ops|enablement|systems|process(?:es)?|automation)
+  - marketing (?:operations|ops|automation)
+  - business (?:operations|ops)
   - strategy (?:&|and) operations
+  - crm (?:manager|specialist|administrator|admin|lead|analyst)
+
+# Mix-and-match: a title is kept when it has a word from EVERY group in a combo,
+# in any order ("Growth Operations Manager", "Operations Manager, Revenue").
+title_combos:
+  # revenue/sales/marketing/growth + operations-style word
+  - - [revenue, sales, marketing, growth, gtm, crm, hubspot, salesforce, outbound, lead gen(?:eration)?, demand gen(?:eration)?]
+    - [operations, ops, systems, architect, automation, enablement, process(?:es)?, infrastructure]
+  # builder-style GTM roles: "Growth Engineer", "Marketing Engineer", "Automation Engineer"
+  - - [growth, revenue, marketing, sales, automation, workflow, crm, no.?code, low.?code, clay]
+    - [engineer]
+  # strategy-flavoured business roles
+  - - [strategy, strategic, business, growth]
+    - [associate, operations, ops, manager, lead, partner, projects, initiatives]
+  # CRM / outbound tooling owners
+  - - [hubspot, salesforce, crm, outbound, apollo, clay]
+    - [manager, specialist, lead, architect, owner, consultant, associate, analyst]
 
 # Drop a job if its title matches any of these.
 exclude_title:
   - intern(?:ship)?
-  - engineer(?:ing)?
-  - developer
-  - designer
-  - data scientist
-  - vp
-  - vice president
+  - trainee
+  # too senior for ~2 years
+  - senior
+  - sr\.?
+  - principal
+  - staff (?:engineer|product|software|data|designer|manager)
   - head of
   - director
+  - vp
+  - vice president
+  - avp
+  - svp
+  - evp
+  # engineering / non-GTM technical roles
+  - software
+  - sdet
+  - data (?:engineer|scientist)
+  - machine learning
+  - ml
+  - back[- ]?end
+  - front[- ]?end
+  - full[- ]?stack
+  - devops
+  - sre
+  - qa
+  - security
+  - site reliability
+  - mechanical
+  - electrical
+  - civil
+  # pre-sales / support engineering
+  - sales engineer
+  - solutions? engineer
+  - support engineer
+  - customer support
+  - developer
+  - designer
 
-# Drop a job if its description matches any of these (keep this list short).
-exclude_description: []
+# Drop a job if its description asks for 5+ years of experience.
+exclude_description:
+  - (?:[5-9]|1\d)\s*\+\s*years
+  - (?:[5-9]|1\d)\s*(?:-|–|to)\s*\d+\s*years
+  - minimum (?:of )?(?:[5-9]|1\d) years
+  - at least (?:[5-9]|1\d) years
 
 # If set, the title or description must mention at least one of these.
 include_keywords: []

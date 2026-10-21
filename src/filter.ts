@@ -13,7 +13,8 @@ function anyOf(patterns: string[]): RegExp | null {
 const REMOTE_ONLY = /\b(?:remote|anywhere|worldwide|global|work from home|wfh|fully|first|only|distributed)\b|[-–—,()/|:;.\s]/gi;
 
 export function buildMatcher(filters: Filters) {
-  const titles = anyOf(filters.titles)!;
+  const titles = anyOf(filters.titles);
+  const combos = filters.title_combos.map((groups) => groups.map((g) => anyOf(g)!));
   const excludeTitle = anyOf(filters.exclude_title);
   const excludeDesc = anyOf(filters.exclude_description);
   const include = anyOf(filters.include_keywords);
@@ -32,7 +33,8 @@ export function buildMatcher(filters: Filters) {
       if (Number.isNaN(posted) ? !filters.keep_undated : now - posted > maxAgeMs) return null;
     }
 
-    if (!titles.test(title)) return null;
+    const titleOk = titles?.test(title) || combos.some((groups) => groups.every((g) => g.test(title)));
+    if (!titleOk) return null;
     if (excludeTitle?.test(title)) return null;
     if (excludeDesc?.test(desc)) return null;
     if (include && !include.test(title) && !include.test(desc)) return null;

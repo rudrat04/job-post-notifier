@@ -26,24 +26,56 @@ describe("titles", () => {
     "Founder’s Office",
     "Founders Office Associate",
     "Founder's Associate",
-    "GTM Lead",
+    "GTM Engineer",
+    "GTM Strategy Manager",
+    "GTM Operations Lead",
     "Go-To-Market Manager",
-    "Growth Manager",
-    "Associate, Growth",
+    "Product Marketing Manager",
+    "Associate Product Marketing Manager",
+    "PMM, Growth",
+    "Revenue Operations Analyst",
+    "RevOps Manager",
+    "Sales Operations Associate",
+    "Sales Process Architect",
+    "Operations Manager, Revenue",
+    "Marketing Automation Specialist",
+    "Marketing Operations Manager",
+    "Growth Engineer",
+    "Automation Engineer, Sales",
+    "Growth Operations Associate",
+    "Strategy Associate",
+    "HubSpot Specialist",
+    "CRM Manager",
   ])("keeps %s", (title) => {
     expect(match(job(title, "Mumbai"))).not.toBeNull();
   });
 
   it.each([
-    "Growth Engineer",
     "Software Engineer",
+    "Senior Product Marketing Manager",
+    "Sr. Revenue Operations Manager",
     "Growth Marketing Intern",
     "VP Growth",
     "Head of Growth",
+    "Director, Revenue Operations",
+    "Staff Software Engineer",
+    "Sales Engineer",
+    "Solutions Engineer",
     "Product Designer",
     "Accounts Payable Manager",
+    "Marketing Manager",
+    "Sales Executive",
   ])("drops %s", (title) => {
     expect(match(job(title, "Mumbai"))).toBeNull();
+  });
+
+  it("drops jobs asking for 5+ years", () => {
+    const d = (description: string) => match(job("RevOps Manager", "Mumbai", { description }));
+    expect(d("You have 6+ years of experience in sales ops")).toBeNull();
+    expect(d("5-8 years of experience")).toBeNull();
+    expect(d("Minimum 7 years in RevOps")).toBeNull();
+    expect(d("1-3 years of experience")).not.toBeNull();
+    expect(d("2+ years of experience")).not.toBeNull();
   });
 });
 
