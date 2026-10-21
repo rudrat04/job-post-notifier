@@ -21,6 +21,14 @@ function groupByCompany(jobs: MatchedJob[]): Map<string, MatchedJob[]> {
   return groups;
 }
 
+const MAX_FAILURES_SHOWN = 8;
+
+function failureNote(failures: SourceFailure[]): string {
+  const shown = failures.slice(0, MAX_FAILURES_SHOWN).map((f) => `${f.company} (${f.reason})`);
+  const more = failures.length - shown.length;
+  return `Couldn't check: ${shown.join("; ")}${more > 0 ? ` and ${more} more` : ""}`;
+}
+
 export function buildDigest(jobs: MatchedJob[], failures: SourceFailure[], now = new Date()) {
   const when = now.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", hour12: true, timeZone: TZ });
   const subject = `${jobs.length} new role${jobs.length === 1 ? "" : "s"} — ${when.replace(/,/, "")}`;
@@ -44,9 +52,7 @@ ${[...groups]
   .join("\n")}
 ${
   failures.length
-    ? `<p style="margin-top:24px;color:#888;font-size:12px">Couldn't check: ${failures
-        .map((f) => `${esc(f.company)} (${esc(f.reason)})`)
-        .join("; ")}</p>`
+    ? `<p style="margin-top:24px;color:#888;font-size:12px">${esc(failureNote(failures))}</p>`
     : ""
 }
 </body></html>`;
@@ -62,7 +68,7 @@ ${
       ),
       "",
     ]),
-    ...(failures.length ? [`Couldn't check: ${failures.map((f) => `${f.company} (${f.reason})`).join("; ")}`] : []),
+    ...(failures.length ? [failureNote(failures)] : []),
   ].join("\n");
 
   return { subject, html, text };

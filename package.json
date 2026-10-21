@@ -9,7 +9,8 @@
     "dry-run": "node --env-file-if-exists=.env --import tsx src/index.ts --dry-run",
     "bootstrap": "node --env-file-if-exists=.env --import tsx src/index.ts --bootstrap",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "discover": "node --env-file-if-exists=.env --import tsx src/discover.ts"
   },
   "engines": {
     "node": ">=22"

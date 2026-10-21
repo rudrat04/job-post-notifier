@@ -1,0 +1,28 @@
+# Cross-company search: finds jobs at companies that are NOT in companies.yaml.
+# Each query is sent to Workable's public job search, which covers every company
+# hiring through Workable. Results are fuzzy, so they still go through the
+# title/location/age filters in filters.yaml.
+locations:
+  - India
+queries:
+  - gtm
+  - go to market
+  - gtm engineer
+  - revenue operations
+  - revops
+  - sales operations
+  - sales enablement
+  - sales process
+  - sales automation
+  - marketing operations
+  - marketing automation
+  - product marketing
+  - growth operations
+  - business operations
+  - strategy and operations
+  - crm
+  - hubspot
+  - chief of staff
+  - founders office
+  - founder's associate
+  - special projects

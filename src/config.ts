@@ -17,7 +17,7 @@ const companiesSchema = z.object({
         }),
       ]),
     )
-    .min(1),
+    .default([]),
 });
 
 const filtersSchema = z
@@ -54,6 +54,12 @@ const filtersSchema = z
     message: "Set at least one of titles or title_combos",
   });
 
+const searchSchema = z.object({
+  locations: z.array(z.string()).min(1),
+  queries: z.array(z.string()).min(1),
+});
+
+export type SearchConfig = z.infer<typeof searchSchema>;
 export type Filters = z.infer<typeof filtersSchema>;
 export type CompaniesConfig = z.infer<typeof companiesSchema>;
 
@@ -68,3 +74,23 @@ async function loadYaml<T>(path: string, schema: z.ZodType<T>): Promise<T> {
 
 export const loadCompanies = (path = "config/companies.yaml") => loadYaml(path, companiesSchema);
 export const loadFilters = (path = "config/filters.yaml") => loadYaml(path, filtersSchema);
+
+/** The search file is optional; without it only the listed companies are checked. */
+export async function loadSearch(path = "config/search.yaml"): Promise<SearchConfig | null> {
+  try {
+    return await loadYaml(path, searchSchema);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw err;
+  }
+}
+
+/** The discovered-companies file is optional; it is written by `npm run discover`. */
+export async function loadDiscovered(path = "config/discovered.yaml") {
+  try {
+    return await loadCompanies(path);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return { companies: [] };
+    throw err;
+  }
+}

@@ -65,6 +65,9 @@ describe("titles", () => {
     "Accounts Payable Manager",
     "Marketing Manager",
     "Sales Executive",
+    "Business Development Manager",
+    "Sales Business Development Manager",
+    "Email Marketing Operations Assistant",
   ])("drops %s", (title) => {
     expect(match(job(title, "Mumbai"))).toBeNull();
   });

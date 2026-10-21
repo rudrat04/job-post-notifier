@@ -37,8 +37,8 @@ title_combos:
   - - [growth, revenue, marketing, sales, automation, workflow, crm, no.?code, low.?code, clay]
     - [engineer]
   # strategy-flavoured business roles
-  - - [strategy, strategic, business, growth]
-    - [associate, operations, ops, manager, lead, partner, projects, initiatives]
+  - - [strategy, strategic]
+    - [associate, operations, ops, partner, projects, initiatives]
   # CRM / outbound tooling owners
   - - [hubspot, salesforce, crm, outbound, apollo, clay]
     - [manager, specialist, lead, architect, owner, consultant, associate, analyst]
@@ -47,6 +47,7 @@ title_combos:
 exclude_title:
   - intern(?:ship)?
   - trainee
+  - assistant
   # too senior for ~2 years
   - senior
   - sr\.?

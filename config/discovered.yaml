@@ -1,0 +1,207 @@
+# Written by `npm run discover` from config/candidates.txt. Safe to delete or regenerate.
+# Only boards with at least one job in an accepted location are kept.
+companies:
+  - url: https://jobs.ashbyhq.com/amplitude
+    name: Amplitude
+    ats: ashby
+    slug: amplitude
+  - url: https://boards.greenhouse.io/anthropic
+    name: Anthropic
+    ats: greenhouse
+    slug: anthropic
+  - url: https://boards.greenhouse.io/asana
+    name: Asana
+    ats: greenhouse
+    slug: asana
+  - url: https://jobs.ashbyhq.com/atlan
+    name: Atlan
+    ats: ashby
+    slug: atlan
+  - url: https://jobs.lever.co/binance
+    name: Binance
+    ats: lever
+    slug: binance
+  - url: https://boards.greenhouse.io/brex
+    name: Brex
+    ats: greenhouse
+    slug: brex
+  - url: https://jobs.ashbyhq.com/bubble
+    name: Bubble
+    ats: ashby
+    slug: bubble
+  - url: https://jobs.ashbyhq.com/bureau
+    name: Bureau
+    ats: ashby
+    slug: bureau
+  - url: https://jobs.ashbyhq.com/clickup
+    name: ClickUp
+    ats: ashby
+    slug: clickup
+  - url: https://boards.greenhouse.io/cloudflare
+    name: Cloudflare
+    ats: greenhouse
+    slug: cloudflare
+  - url: https://jobs.ashbyhq.com/cohere
+    name: Cohere
+    ats: ashby
+    slug: cohere
+  - url: https://boards.greenhouse.io/coinbase
+    name: Coinbase
+    ats: greenhouse
+    slug: coinbase
+  - url: https://jobs.lever.co/cred
+    name: CRED
+    ats: lever
+    slug: cred
+  - url: https://boards.greenhouse.io/customerio
+    name: Customer.io
+    ats: greenhouse
+    slug: customerio
+  - url: https://boards.greenhouse.io/databricks
+    name: Databricks
+    ats: greenhouse
+    slug: databricks
+  - url: https://boards.greenhouse.io/datadog
+    name: Datadog
+    ats: greenhouse
+    slug: datadog
+  - url: https://jobs.ashbyhq.com/decagon
+    name: Decagon
+    ats: ashby
+    slug: decagon
+  - url: https://boards.greenhouse.io/elastic
+    name: Elastic
+    ats: greenhouse
+    slug: elastic
+  - url: https://jobs.ashbyhq.com/elevenlabs
+    name: ElevenLabs
+    ats: ashby
+    slug: elevenlabs
+  - url: https://boards.greenhouse.io/fivetran
+    name: Fivetran
+    ats: greenhouse
+    slug: fivetran
+  - url: https://boards.greenhouse.io/gitlab
+    name: GitLab
+    ats: greenhouse
+    slug: gitlab
+  - url: https://boards.greenhouse.io/glide
+    name: Glide
+    ats: greenhouse
+    slug: glide
+  - url: https://boards.greenhouse.io/grafanalabs
+    name: Grafana Labs
+    ats: greenhouse
+    slug: grafanalabs
+  - url: https://jobs.ashbyhq.com/harvey
+    name: Harvey
+    ats: ashby
+    slug: harvey
+  - url: https://boards.greenhouse.io/inmobi
+    name: InMobi
+    ats: greenhouse
+    slug: inmobi
+  - url: https://jobs.ashbyhq.com/lead-forensics
+    name: Lead Forensics
+    ats: ashby
+    slug: lead-forensics
+  - url: https://jobs.lever.co/loopreturns
+    name: Loop Returns
+    ats: lever
+    slug: loopreturns
+  - url: https://jobs.ashbyhq.com/lovable
+    name: Lovable
+    ats: ashby
+    slug: lovable
+  - url: https://jobs.lever.co/meesho
+    name: Meesho
+    ats: lever
+    slug: meesho
+  - url: https://boards.greenhouse.io/mongodb
+    name: MongoDB
+    ats: greenhouse
+    slug: mongodb
+  - url: https://jobs.ashbyhq.com/notion
+    name: Notion
+    ats: ashby
+    slug: notion
+  - url: https://boards.greenhouse.io/okta
+    name: Okta
+    ats: greenhouse
+    slug: okta
+  - url: https://jobs.ashbyhq.com/openai
+    name: OpenAI
+    ats: ashby
+    slug: openai
+  - url: https://jobs.ashbyhq.com/oyster
+    name: Oyster
+    ats: ashby
+    slug: oyster
+  - url: https://jobs.lever.co/paytm
+    name: Paytm
+    ats: lever
+    slug: paytm
+  - url: https://boards.greenhouse.io/pendo
+    name: Pendo
+    ats: greenhouse
+    slug: pendo
+  - url: https://jobs.ashbyhq.com/posthog
+    name: PostHog
+    ats: ashby
+    slug: posthog
+  - url: https://boards.greenhouse.io/postscript
+    name: Postscript
+    ats: greenhouse
+    slug: postscript
+  - url: https://jobs.ashbyhq.com/sarvam
+    name: Sarvam
+    ats: ashby
+    slug: sarvam
+  - url: https://jobs.ashbyhq.com/snowflake
+    name: Snowflake
+    ats: ashby
+    slug: snowflake
+  - url: https://boards.greenhouse.io/stripe
+    name: Stripe
+    ats: greenhouse
+    slug: stripe
+  - url: https://jobs.ashbyhq.com/supabase
+    name: Supabase
+    ats: ashby
+    slug: supabase
+  - url: https://jobs.lever.co/toptal
+    name: Toptal
+    ats: lever
+    slug: toptal
+  - url: https://boards.greenhouse.io/turing
+    name: Turing
+    ats: greenhouse
+    slug: turing
+  - url: https://boards.greenhouse.io/twilio
+    name: Twilio
+    ats: greenhouse
+    slug: twilio
+  - url: https://boards.greenhouse.io/upwork
+    name: Upwork
+    ats: greenhouse
+    slug: upwork
+  - url: https://boards.greenhouse.io/usergems
+    name: UserGems
+    ats: greenhouse
+    slug: usergems
+  - url: https://jobs.ashbyhq.com/zapier
+    name: Zapier
+    ats: ashby
+    slug: zapier
+  - url: https://jobs.lever.co/zeta
+    name: Zeta
+    ats: lever
+    slug: zeta
+  - url: https://boards.greenhouse.io/zoominfo
+    name: ZoomInfo
+    ats: greenhouse
+    slug: zoominfo
+  - url: https://boards.greenhouse.io/zscaler
+    name: Zscaler
+    ats: greenhouse
+    slug: zscaler

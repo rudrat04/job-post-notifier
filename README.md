@@ -21,3 +21,9 @@ With `onboarding@resend.dev` as the sender, Resend only delivers to the address 
 
 ## Tests
 `npm test` runs the filter and ATS-detection unit tests.
+
+## Finding companies you haven't listed
+- **Workable search** (`config/search.yaml`): each run searches every company hiring through Workable for your role keywords in India. No company list needed.
+- **Discovery** (`npm run discover`): reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes. Add names to `candidates.txt` and rerun it whenever you like.
+
+Greenhouse, Lever and Ashby have no cross-company search, so coverage there is limited to the companies listed in `companies.yaml` and `discovered.yaml`.
