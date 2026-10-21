@@ -4,7 +4,8 @@ import { resolveCompany } from "./detect";
 import { buildDigest, sendEmail } from "./email";
 import { buildMatcher } from "./filter";
 import { fetchJobs } from "./sources";
-import { searchWorkable } from "./sources/workable-search";
+import { planSearches } from "./sources/search";
+import { contentId, mergeDuplicates } from "./dedupe";
 import { createStore } from "./store";
 import type { Job, MatchedJob, SourceFailure } from "./types";
 
@@ -23,7 +24,7 @@ async function main() {
   ]);
   const companies = [...manual.companies, ...discovered.companies];
   const match = buildMatcher(filters);
-  const limit = pLimit(8);
+  const limit = pLimit(6);
   const failures: SourceFailure[] = [];
   let checked = 0;
 
@@ -45,29 +46,30 @@ async function main() {
     }),
   );
 
-  const fromSearch = (search?.queries ?? []).flatMap((query) =>
-    search!.locations.map((location) =>
-      limit(async () => {
-        try {
-          const jobs = await searchWorkable(query, location, filters.max_age_days);
-          const matched = jobs.map((j) => match(j)).filter((j): j is MatchedJob => j !== null);
-          console.log(`Workable search "${query}" in ${location}: ${jobs.length} results, ${matched.length} match`);
-          return matched;
-        } catch (err) {
-          console.warn(`Workable search "${query}": FAILED — ${errorMessage(err)}`);
-          failures.push({ company: `Workable search "${query}"`, url: "", reason: errorMessage(err) });
-          return [];
-        }
-      }),
-    ),
+  const { tasks, skipped } = search ? planSearches(search, filters.max_age_days) : { tasks: [], skipped: [] };
+  for (const name of skipped) console.warn(`Skipping ${name}`);
+
+  const fromSearch = tasks.map((task) =>
+    limit(async () => {
+      try {
+        const jobs = await task.run();
+        const matched = jobs.map((j) => match(j)).filter((j): j is MatchedJob => j !== null);
+        console.log(`${task.label}: ${jobs.length} results, ${matched.length} match`);
+        return matched;
+      } catch (err) {
+        console.warn(`${task.label}: FAILED — ${errorMessage(err)}`);
+        failures.push({ company: task.label, url: "", reason: errorMessage(err) });
+        return [];
+      }
+    }),
   );
 
   const results = await Promise.all([...fromCompanies, ...fromSearch]);
   if (failures.length === results.length) throw new Error("Every source failed to load");
-  console.log(`\nChecked ${checked} company boards and ${fromSearch.length} searches.`);
+  console.log(`\nChecked ${checked} company boards and ${tasks.length} searches.`);
 
-  // The same posting can appear twice (a company listed twice, or found by two searches).
-  const matched = [...new Map(results.flat().map((j) => [j.id, j])).values()];
+  // The same role is often found on several sites; give each one id per company + title and merge them.
+  const matched = mergeDuplicates(results.flat().map((j) => ({ ...j, id: contentId(j.company, j.title) })));
 
   const store = createStore();
   if (!store && !dryRun) throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");

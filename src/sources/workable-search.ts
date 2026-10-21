@@ -1,6 +1,6 @@
 import { getJson, htmlToText } from "../http";
 import type { Job } from "../types";
-import { jobId } from "./index";
+import { contentId } from "../dedupe";
 
 interface SearchJob {
   id: string;
@@ -42,10 +42,11 @@ export async function searchWorkable(
     for (const j of data.jobs ?? []) {
       const place = [j.location?.city, j.location?.countryName].filter(Boolean).join(", ");
       const remote = j.workplace === "remote" || (j.locations ?? []).includes("TELECOMMUTE");
+      const company = j.company?.title?.trim() || "Unknown company";
       jobs.push({
-        id: jobId("workable", "search", j.id),
+        id: contentId(company, j.title),
         externalId: j.id,
-        company: j.company?.title?.trim() || "Unknown company",
+        company,
         title: j.title.trim(),
         location: remote && !/\bremote\b/i.test(place) ? `Remote${place ? ` (${place})` : ""}` : place,
         remote,

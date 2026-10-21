@@ -1,28 +1,47 @@
-# Cross-company search: finds jobs at companies that are NOT in companies.yaml.
-# Each query is sent to Workable's public job search, which covers every company
-# hiring through Workable. Results are fuzzy, so they still go through the
-# title/location/age filters in filters.yaml.
-locations:
-  - India
+# Keyword search across job sites, so you don't need a list of companies.
+# Every source is queried with these keywords; results then go through the
+# title, location, experience and age filters in filters.yaml.
 queries:
   - gtm
-  - go to market
   - gtm engineer
   - revenue operations
   - revops
   - sales operations
   - sales enablement
   - sales process
-  - sales automation
   - marketing operations
   - marketing automation
   - product marketing
   - growth operations
   - business operations
   - strategy and operations
-  - crm
-  - hubspot
   - chief of staff
   - founders office
   - founder's associate
-  - special projects
+  - hubspot
+  - crm
+
+# Free, no key. Covers every company hiring through Workable.
+workable:
+  locations: [India]
+
+# Free key from developer.adzuna.com → ADZUNA_APP_ID, ADZUNA_APP_KEY.
+# Aggregates many Indian job sites. "India" catches remote roles.
+adzuna:
+  where: [Mumbai, Bengaluru, Pune, India]
+
+# Free key from jooble.org/api/about → JOOBLE_API_KEY.
+jooble:
+  where: [Mumbai, Bengaluru, Pune, India]
+
+# RapidAPI key (JSearch) → RAPIDAPI_KEY. The free tier is ~200 requests a month,
+# so only a few high-value queries, capped per run (2 runs a day × 3 ≈ 180/month).
+jsearch:
+  queries:
+    - gtm engineer
+    - revenue operations
+    - chief of staff
+    - founders office
+    - product marketing
+  where: [India]
+  max_requests: 3

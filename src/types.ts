@@ -1,4 +1,6 @@
 export type Ats = "greenhouse" | "lever" | "ashby" | "workable";
+/** Where a job came from: an employer's own job board, or a keyword-search aggregator. */
+export type Source = Ats | "adzuna" | "jooble" | "jsearch";
 
 export interface CompanyEntry {
   url: string;
@@ -15,7 +17,7 @@ export interface ResolvedCompany {
 }
 
 export interface Job {
-  /** Stable dedupe key: sha1 of ats, slug and the ATS's own job id. */
+  /** Dedupe key: sha1 of company + title (see dedupe.ts), the same across every source. */
   id: string;
   externalId: string;
   company: string;
@@ -23,7 +25,7 @@ export interface Job {
   location: string;
   remote: boolean;
   url: string;
-  source: Ats;
+  source: Source;
   postedAt?: string;
   description?: string;
 }

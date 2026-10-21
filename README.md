@@ -22,8 +22,11 @@ With `onboarding@resend.dev` as the sender, Resend only delivers to the address 
 ## Tests
 `npm test` runs the filter and ATS-detection unit tests.
 
-## Finding companies you haven't listed
-- **Workable search** (`config/search.yaml`): each run searches every company hiring through Workable for your role keywords in India. No company list needed.
-- **Discovery** (`npm run discover`): reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes. Add names to `candidates.txt` and rerun it whenever you like.
+## Finding jobs without a company list
+`config/search.yaml` holds the role keywords, which are searched across job sites:
+- **Workable** covers every company hiring through Workable. It needs no key.
+- **Adzuna** (`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`), **Jooble** (`JOOBLE_API_KEY`) and **JSearch** (`RAPIDAPI_KEY`) are aggregators. Add the free keys to `.env` and to the GitHub secrets. A source without its key is skipped with a note in the log.
 
-Greenhouse, Lever and Ashby have no cross-company search, so coverage there is limited to the companies listed in `companies.yaml` and `discovered.yaml`.
+The same role found on several sites is emailed once, matched on company and title.
+
+For employers' own boards, `npm run discover` reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes.

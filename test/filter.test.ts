@@ -85,6 +85,9 @@ describe("titles", () => {
 describe("locations", () => {
   it.each([
     ["Mumbai", false],
+    ["Pune, Maharashtra", false],
+    ["Bengaluru, Karnataka", false],
+    ["Bangalore", false],
     ["Mumbai, Maharashtra, India", false],
     ["Bengaluru / Mumbai", false],
     ["Remote - India", true],
@@ -97,8 +100,8 @@ describe("locations", () => {
   });
 
   it.each([
-    ["Bengaluru", false],
     ["Delhi", false],
+    ["Hyderabad", false],
     ["San Francisco", false],
     ["Remote (US)", true],
     ["Remote - EMEA", true],

@@ -108,6 +108,10 @@ locations:
     - bombay
     - navi mumbai
     - thane
+    - bengaluru
+    - bangalore
+    - bengalooru
+    - pune
   # Remote jobs limited to these regions are kept.
   remote_regions:
     - india

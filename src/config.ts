@@ -54,9 +54,24 @@ const filtersSchema = z
     message: "Set at least one of titles or title_combos",
   });
 
+const whereList = z.object({ where: z.array(z.string()).min(1) });
+
 const searchSchema = z.object({
-  locations: z.array(z.string()).min(1),
+  /** Keywords sent to every search source. */
   queries: z.array(z.string()).min(1),
+  workable: z.object({ locations: z.array(z.string()).min(1) }).optional(),
+  /** Needs ADZUNA_APP_ID and ADZUNA_APP_KEY; skipped if they are missing. */
+  adzuna: whereList.optional(),
+  /** Needs JOOBLE_API_KEY. */
+  jooble: whereList.optional(),
+  /** Needs RAPIDAPI_KEY. Own query list and a request cap, as the free tier is small. */
+  jsearch: z
+    .object({
+      queries: z.array(z.string()).min(1),
+      where: z.array(z.string()).min(1),
+      max_requests: z.number().int().positive().default(3),
+    })
+    .optional(),
 });
 
 export type SearchConfig = z.infer<typeof searchSchema>;
