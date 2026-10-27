@@ -1,0 +1,157 @@
+# Freelance leads: people or companies that may need your services.
+# Run with `npm run leads`; they are emailed separately from the job digest.
+
+# Drop leads older than this many days.
+max_age_days: 2
+
+# For Reddit, Hacker News and Freelancer posts, a lead must mention one of your
+# services AND ask for help. Regex fragments, case-insensitive, whole words.
+services:
+  # websites
+  - web ?sites?
+  - landing pages?
+  - webflow
+  - wordpress
+  - framer
+  - web ?design(?:er)?
+  - web ?developer
+  # GTM
+  - gtm
+  - go[- ]to[- ]market
+  - revops
+  - rev ops
+  - revenue operations
+  - sales operations
+  - sales process
+  - hubspot
+  - zoho crm
+  - crm
+  - clay
+  - apollo
+  - outbound
+  - cold email
+  - lead gen(?:eration)?
+  - product marketing
+  - positioning
+  - sales automation
+  - marketing automation
+  - zapier
+  - n8n
+  - make\.com
+
+# A post counts when one of these asks sits within ~100 characters of a service above
+# ("looking for someone to build our landing page"), in either order.
+intent:
+  - looking for
+  - looking to hire
+  - need(?:s|ed)?
+  - hiring
+  - seeking
+  - want(?:s|ed)? (?:to hire|someone)
+  - recommend(?:ations?)?
+  - anyone (?:know|recommend|here)
+  - can (?:anyone|someone)
+  - who can
+  - help (?:with|me|setting)
+  - budget
+  - quote
+  - wanted
+  - required
+
+# Skip people advertising themselves, job seekers and other noise (checked on the title).
+exclude:
+  - \[for hire\]
+  - for hire
+  - available for
+  - hire me
+  - offering
+  - starting (?:at|from)
+  - i(?:'m| am) (?:a|an) (?:freelance|freelancer|developer|designer|consultant)
+  - i (?:build|help|offer|design|develop|made|built)
+  - we (?:build|offer|help|made|built)
+  - my services
+  - dm me
+  - open to work
+  - free (?:audit|consult|consultation|website|trial|research)
+  - show hn
+  - co-?founder
+  - early users
+  - commission
+  - sales reps?
+  - bde
+  - interns?(?:hip)?
+  - roles?
+  - opportunit(?:y|ies)
+  - job
+  - seo
+  - content
+  - copy(?:writ\w*)?
+  - writ(?:er|ing)
+  - data entry
+  - translat\w+
+  - proofread\w*
+  - looking for (?:a )?(?:work|clients?|projects?)
+
+# Reddit's search feed, no key needed. All subreddits are searched together, one
+# request per query. If Reddit blocks GitHub's servers it shows as "couldn't check".
+reddit:
+  subreddits:
+    - forhire
+    - hiring
+    - startups
+    - SaaS
+    - B2BSaaS
+    - smallbusiness
+    - Entrepreneur
+    - indianstartups
+    - IndiaStartups
+    - sales
+    - hubspot
+    - webdev
+  queries:
+    - website
+    - landing page
+    - GTM
+    - go-to-market
+    - RevOps
+    - HubSpot
+    - lead generation
+    - outbound
+    - sales automation
+
+# Hacker News posts and comments (free Algolia search).
+hackernews:
+  queries:
+    - seeking freelancer
+    - looking for freelancer
+    - looking for a consultant
+    - need help GTM
+    - need help website
+
+# Open projects on Freelancer.com (free public API). Many gigs there are tiny or
+# swamped with bids, so these limits keep only the ones worth pitching.
+freelancer:
+  min_budget_usd: 150
+  max_bids: 60
+  max_per_run: 10
+  queries:
+    - website design
+    - landing page
+    - webflow
+    - wordpress website
+    - hubspot
+    - crm setup
+    - lead generation
+    - cold email
+    - sales automation
+    - go to market
+    - n8n automation
+    - zapier
+
+# Newly funded Indian startups, from Google News. These need GTM and a website soon.
+funding:
+  queries:
+    - India startup raises seed funding
+    - India startup raises pre-seed
+    - India startup raises Series A
+  max_per_run: 10

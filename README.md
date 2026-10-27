@@ -32,3 +32,11 @@ With `onboarding@resend.dev` as the sender, Resend only delivers to the address 
 The same role found on several sites is emailed once, matched on company and title.
 
 For employers' own boards, `npm run discover` reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes.
+
+## Freelance leads
+`npm run leads` finds people who may need your services (websites, GTM engineering, GTM strategy) and emails them separately from the job digest. Everything is set in `config/leads.yaml`.
+- **Reddit** (search feed, no key), **Hacker News** (Algolia search) and **Freelancer.com** (public API): a post counts when it asks for help close to one of your services, and people advertising themselves are dropped. Freelancer projects are limited by budget and bid count.
+- **Funding news** (Google News): newly funded Indian startups, one per company.
+- Companies hiring GTM or RevOps roles in the job digest are leads too.
+
+`npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` runs at 13:15 and 18:15 IST. Leads are remembered in the `seen_leads` table (`supabase/migrations/002_seen_leads.sql`). Reddit rate-limits quickly, so if it blocks a run it is listed under "couldn't check".

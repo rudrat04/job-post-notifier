@@ -10,13 +10,17 @@
     "bootstrap": "node --env-file-if-exists=.env --import tsx src/index.ts --bootstrap",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "discover": "node --env-file-if-exists=.env --import tsx src/discover.ts"
+    "discover": "node --env-file-if-exists=.env --import tsx src/discover.ts",
+    "leads": "node --env-file-if-exists=.env --import tsx src/leads/index.ts",
+    "leads:dry-run": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --dry-run",
+    "leads:bootstrap": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --bootstrap"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
+    "fast-xml-parser": "^5.11.2",
     "p-limit": "^7.3.3",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"

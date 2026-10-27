@@ -1,0 +1,46 @@
+name: Freelance leads
+
+on:
+  schedule:
+    - cron: "45 7 * * *"   # 13:15 IST, after the job digest
+    - cron: "45 12 * * *"  # 18:15 IST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        type: choice
+        options: [normal, dry-run, bootstrap]
+        default: normal
+
+permissions:
+  contents: read
+
+concurrency:
+  group: freelance-leads
+  cancel-in-progress: false
+
+jobs:
+  leads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run lead finder
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          MODE: ${{ inputs.mode || 'normal' }}
+        run: |
+          case "$MODE" in
+            dry-run)   npx tsx src/leads/index.ts --dry-run ;;
+            bootstrap) npx tsx src/leads/index.ts --bootstrap ;;
+            *)         npx tsx src/leads/index.ts ;;
+          esac
