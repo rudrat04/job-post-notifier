@@ -125,8 +125,6 @@ locations:
     - bangalore
     - bengalooru
     - pune
-    - ahmedabad
-    - gandhinagar
   # Remote jobs limited to these regions are kept.
   remote_regions:
     - india
