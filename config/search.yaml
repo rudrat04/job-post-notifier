@@ -28,11 +28,11 @@ workable:
 # Free key from developer.adzuna.com → ADZUNA_APP_ID, ADZUNA_APP_KEY.
 # Aggregates many Indian job sites. "India" catches remote roles.
 adzuna:
-  where: [Mumbai, Bengaluru, Pune, India]
+  where: [Mumbai, Bengaluru, Pune, Ahmedabad, Gandhinagar, India]
 
 # Free key from jooble.org/api/about → JOOBLE_API_KEY.
 jooble:
-  where: [Mumbai, Bengaluru, Pune, India]
+  where: [Mumbai, Bengaluru, Pune, Ahmedabad, Gandhinagar, India]
 
 # RapidAPI key (JSearch) → RAPIDAPI_KEY. The free tier is ~200 requests a month,
 # so only a few high-value queries, capped per run (2 runs a day × 3 ≈ 180/month).
@@ -61,6 +61,6 @@ jobspy:
     - product marketing
     - chief of staff
     - founders office
-  where: [Mumbai, Bengaluru, Pune]
+  where: [Mumbai, Bengaluru, Pune, Ahmedabad, Gandhinagar]
   remote_india: true
   results_per_site: 20

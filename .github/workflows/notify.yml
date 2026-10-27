@@ -2,7 +2,7 @@ name: Job digest
 
 on:
   schedule:
-    - cron: "30 3 * * *"   # 09:00 IST
+    - cron: "30 7 * * *"   # 13:00 IST
     - cron: "30 12 * * *"  # 18:00 IST
   workflow_dispatch:
     inputs:

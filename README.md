@@ -1,6 +1,6 @@
 # Job Post Notifier
 
-Checks the public job feeds of Greenhouse, Lever, Ashby and Workable boards for roles that match `config/filters.yaml`. It emails a digest of postings it hasn't sent before. GitHub Actions runs it at 09:00 and 18:00 IST, and when nothing new turns up, no email goes out.
+Checks the public job feeds of Greenhouse, Lever, Ashby and Workable boards for roles that match `config/filters.yaml`. It emails a digest of postings it hasn't sent before. GitHub Actions runs it at 13:00 and 18:00 IST, and when nothing new turns up, no email goes out.
 
 ## Configure
 - `config/companies.yaml`: career page URLs. The ATS is detected from the URL, or from the page's HTML for a company's own careers page.
