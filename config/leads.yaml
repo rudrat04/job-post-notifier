@@ -4,8 +4,13 @@
 # Drop leads older than this many days.
 max_age_days: 2
 
-# For Reddit, Hacker News and Freelancer posts, a lead must mention one of your
-# services AND ask for help. Regex fragments, case-insensitive, whole words.
+# For Reddit, Hacker News, X and LinkedIn posts, a lead must ask for help close to a
+# service. Regex fragments, case-insensitive, whole words. A post counts when:
+#   (a) an asking verb is followed by a role within ~2 words ("looking for a GTM consultant")
+#       and a service is named in the start of the post, or
+#   (b) an asking verb is followed by the service itself ("need a landing page"), or
+#   (c) a service is followed by "needed" ("website developer needed").
+# "Need a ride to the polls" matches none of these.
 services:
   # websites
   - web ?sites?
@@ -15,6 +20,7 @@ services:
   - framer
   - web ?design(?:er)?
   - web ?developer
+  - website developer
   # GTM
   - gtm
   - go[- ]to[- ]market
@@ -25,10 +31,9 @@ services:
   - sales process
   - hubspot
   - zoho crm
-  - crm
-  - clay
-  - apollo
-  - outbound
+  - crm (?:setup|implementation|migration|consultant|admin|expert|cleanup|integration)
+  - clay (?:tables?|workflows?|expert|consultant|enrichment|setup)
+  - outbound (?:sales|marketing|campaigns?|prospecting|setup|system|agency|specialist|expert|lead gen\w*)
   - cold email
   - lead gen(?:eration)?
   - product marketing
@@ -39,24 +44,35 @@ services:
   - n8n
   - make\.com
 
-# A post counts when one of these asks sits within ~100 characters of a service above
-# ("looking for someone to build our landing page"), in either order.
+# Asking verbs.
 intent:
   - looking for
   - looking to hire
   - need(?:s|ed)?
-  - hiring
   - seeking
-  - want(?:s|ed)? (?:to hire|someone)
-  - recommend(?:ations?)?
-  - anyone (?:know|recommend|here)
-  - can (?:anyone|someone)
+  - want(?:s|ed)? to hire
+  - hire
+  - recommend(?:ations?)?(?:\s+for)?
+  - anyone know
   - who can
-  - help (?:with|me|setting)
-  - budget
-  - quote
-  - wanted
-  - required
+  - can (?:anyone|someone) (?:recommend|help|build|set up)
+
+# Who is being asked for.
+roles:
+  - some(?:one|body)
+  - help
+  - freelancers?
+  - consultants?
+  - agenc(?:y|ies)
+  - experts?
+  - developers?
+  - designers?
+  - specialists?
+  - contractors?
+  - partners?
+  - builders?
+  - engineers?
+  - advisors?
 
 # Skip people advertising themselves, job seekers and other noise (checked on the title).
 exclude:
@@ -83,6 +99,10 @@ exclude:
   - roles?
   - opportunit(?:y|ies)
   - job
+  - host(?:ing|ed)?
+  - plugins?
+  - domain names?
+  - cpanel
   - seo
   - content
   - copy(?:writ\w*)?
@@ -91,6 +111,23 @@ exclude:
   - translat\w+
   - proofread\w*
   - looking for (?:a )?(?:work|clients?|projects?)
+
+# Skip employers' own hiring posts and adverts (checked on title and text).
+exclude_text:
+  - we(?:'re| are) (?:actively )?(?:hiring|looking to hire)
+  - is hiring
+  - join our team
+  - apply now
+  - open positions?
+  - '#hiring'
+  - '#opentowork'
+  - full[- ]time
+  - (?:they|he|she)(?:'re| are| is) hiring
+  - hiring (?:a|an)\b
+  - ask(?:s|ed)? me
+  - do(?:es)? (?:i|you|my|your) (?:really )?need
+  - what companies are really looking for
+  - remote hiring
 
 # Reddit's search feed, no key needed. All subreddits and all queries go into ONE
 # search per run ("a OR b OR c"), because Reddit answers 429 to a second request
@@ -156,3 +193,26 @@ funding:
     - India startup raises pre-seed
     - India startup raises Series A
   max_per_run: 10
+
+# Google search through Serper (SERPER_API_KEY, falls back to SerpApi's SERPAPI_KEY)
+# for "looking for / seeking" posts on Reddit, X and LinkedIn. One search per
+# platform per group of services: site:reddit.com (asks) (group). New posts can
+# take hours to appear in Google, and X and LinkedIn are indexed patchily.
+web_search:
+  platforms: [reddit, x, linkedin]
+  asks:
+    - looking for
+    - seeking
+    - need a
+    - need someone
+    - recommend
+    - anyone know
+  groups:
+    - [website, landing page, webflow, wordpress]
+    - [GTM, go-to-market, RevOps, revenue operations]
+    - [HubSpot, CRM, sales automation, marketing automation, n8n, zapier]
+    - [outbound, cold email, lead generation, sales process, Clay]
+  # Serper's free accounts return at most 10 results per search.
+  results_per_query: 10
+  # 3 platforms × 4 groups = 12 searches per run; this caps it to protect the quota.
+  max_queries: 12

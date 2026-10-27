@@ -1,4 +1,4 @@
-export type LeadSource = "reddit" | "hackernews" | "freelancer" | "funding";
+export type LeadSource = "reddit" | "hackernews" | "freelancer" | "funding" | "x" | "linkedin";
 
 /** Someone who may need your services: a request for help, a project post, or a freshly funded startup. */
 export interface Lead {

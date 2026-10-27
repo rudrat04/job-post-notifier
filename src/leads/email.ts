@@ -10,8 +10,10 @@ const HEADINGS: Record<LeadSource, string> = {
   hackernews: "Hacker News",
   freelancer: "Freelancer.com projects",
   funding: "Newly funded startups",
+  x: "X (Twitter) posts",
+  linkedin: "LinkedIn posts",
 };
-const ORDER: LeadSource[] = ["reddit", "hackernews", "freelancer", "funding"];
+const ORDER: LeadSource[] = ["reddit", "x", "linkedin", "hackernews", "freelancer", "funding"];
 
 const snippet = (s: string) => (s.length > 220 ? `${s.slice(0, 220).trimEnd()}…` : s);
 
@@ -55,7 +57,7 @@ ${note ? `<p style="margin-top:24px;color:#888;font-size:12px">${esc(note)}</p>`
     "",
     ...groups.flatMap(([source, list]) => [
       HEADINGS[source],
-      ...list.map((l) => `  • ${l.title}\n    ${meta(l)}\n    ${l.url}`),
+      ...list.map((l) => `  • ${l.title}\n${l.text ? `    ${snippet(l.text)}\n` : ""}    ${meta(l)}\n    ${l.url}`),
       "",
     ]),
     ...(note ? [note] : []),

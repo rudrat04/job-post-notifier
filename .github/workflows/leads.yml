@@ -2,8 +2,7 @@ name: Freelance leads
 
 on:
   schedule:
-    - cron: "45 7 * * *"   # 13:15 IST, after the job digest
-    - cron: "45 12 * * *"  # 18:15 IST
+    - cron: "45 7 * * 1-5"  # 13:15 IST, Monday to Friday only
   workflow_dispatch:
     inputs:
       mode:
@@ -37,6 +36,8 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
           MODE: ${{ inputs.mode || 'normal' }}
         run: |
           case "$MODE" in

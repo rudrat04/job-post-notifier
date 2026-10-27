@@ -3,6 +3,12 @@ import { createHash } from "node:crypto";
 import { getText, HttpError, htmlToText } from "../../http";
 import type { Lead } from "../types";
 
+/** One id per Reddit post however its link is written, so the RSS and web-search sources don't double up. */
+export function redditLeadId(url: string): string {
+  const post = url.match(/\/comments\/([a-z0-9]+)/i)?.[1];
+  return createHash("sha1").update(`reddit:${post ?? url}`).digest("hex");
+}
+
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", textNodeName: "#text" });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -29,7 +35,7 @@ export function parseRedditFeed(xml: string): Lead[] {
     if (!url || !title) return [];
     return [
       {
-        id: createHash("sha1").update(`reddit:${url}`).digest("hex"),
+        id: redditLeadId(url),
         source: "reddit" as const,
         title,
         text: htmlToText(text(e.content)),

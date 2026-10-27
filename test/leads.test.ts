@@ -26,8 +26,15 @@ describe("lead filter", () => {
     ["Need a HubSpot expert to set up our CRM", ""],
     ["Can anyone recommend a freelancer for GTM strategy?", ""],
     ["Website developer needed for our startup", ""],
+    ["Looking for a freelance RevOps consultant", ""],
+    ["Rahul on X", "Looking for an outbound sales expert to fix our pipeline"],
+    ["Danielle Forbes' Post", "Looking for a creative web designer who can turn ideas into a clean, professional website. Please reach out."],
+    ["WordPress Designer and Developer Contract", "KrimaAi LLC is looking for a skilled WordPress designer and developer for a contract project."],
+    ["Need a Webflow developer for a SaaS site", ""],
+    ["I need a landing page built for my product", ""],
     ["[Hiring] RevOps consultant, Mumbai", ""],
-    ["Marketing help", "We are looking for an agency to run outbound for us. Budget is flexible."],
+    ["Seeking a GTM consultant for our B2B SaaS", ""],
+    ["Marketing help", "We are looking for an agency to run outbound campaigns for us. Budget is flexible."],
   ])("keeps %s", (title, text) => {
     expect(match(lead(title, text))).toBe(true);
   });
@@ -43,6 +50,15 @@ describe("lead filter", () => {
     ["At what point does changing your ICP become an excuse?", "Product decisions are hard."],
     ["How do you preempt the 'X already does that' reaction?", ""],
     ["I'm a freelance web designer open to work", ""],
+    ["Need a ride to the polls? This website can help", "Find your polling place"],
+    ["Clay Travis on X", "Need a break from the noise? Looking for an outbound edge in football picks"],
+    ["Need a tutor", "for b2b sales classes"],
+    ["Looking for affordable shared WordPress hosting", ""],
+    ["Francisc Toth's Post", "Founders ask me every month: Do I need a web designer or a web developer?"],
+    ["Katie Schwartz posted this", "They're hiring a GTM Associate right now! Looking for someone analytical."],
+    ["Tracking completed meetings in HubSpot", "I need to see which calls were completed in the CRM"],
+    ["Radish's Post", "We're actively looking for our next HubSpot specialist. Join our team! #hiring"],
+    ["If I started my cleaning business from scratch, this is how I'd get clients", ""],
   ])("drops %s", (title, text) => {
     expect(match(lead(title, text))).toBe(false);
   });
@@ -138,5 +154,66 @@ describe("leads email", () => {
     expect(d.text).toContain("Newly funded startups");
     expect(d.text).toContain("Couldn't check: Reddit (HTTP 429)");
     expect(d.html).toContain("Need a landing page");
+  });
+});
+
+describe("web search", () => {
+  it("builds one query per platform and group", async () => {
+    const { buildQuery } = await import("../src/leads/sources/websearch");
+    expect(buildQuery("reddit", ["looking for", "seeking"], ["website", "landing page"])).toBe(
+      'site:reddit.com ("looking for" OR seeking) (website OR "landing page")',
+    );
+    expect(buildQuery("x", ["seeking"], ["GTM"])).toBe("(site:x.com OR site:twitter.com) (seeking) (GTM)");
+    expect(buildQuery("linkedin", ["seeking"], ["GTM"])).toContain("site:linkedin.com/posts");
+  });
+
+  it("reads Google's relative and absolute dates", async () => {
+    const { parseResultDate } = await import("../src/leads/sources/websearch");
+    const now = Date.parse("2026-10-27T12:00:00Z");
+    expect(parseResultDate("3 hours ago", now)).toBe("2026-10-27T09:00:00.000Z");
+    expect(parseResultDate("2 days ago", now)).toBe("2026-10-25T12:00:00.000Z");
+    expect(parseResultDate("Oct 26, 2026", now)).toMatch(/^2026-10-2[56]/);
+    expect(parseResultDate(undefined, now)).toBeUndefined();
+    expect(parseResultDate("whenever", now)).toBeUndefined();
+  });
+
+  it("keeps real posts, drops profile and wiki pages, and reuses the Reddit RSS id", async () => {
+    const { searchWeb } = await import("../src/leads/sources/websearch");
+    const { redditLeadId } = await import("../src/leads/sources/reddit");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            organic: [
+              { title: "Need a website built : r/website", link: "https://www.reddit.com/r/website/comments/1xf63in/i_need_a_website_built/", snippet: "Looking for a developer", date: "3 hours ago" },
+              { title: "r/FortniteBR", link: "https://www.reddit.com/r/FortniteBR/" },
+              { title: "Wiki", link: "https://www.reddit.com/r/x/wiki/index/" },
+            ],
+          }),
+        ),
+      ),
+    );
+    const leads = await searchWeb("reddit", "q", 1, 10, { SERPER_API_KEY: "k" });
+    vi.unstubAllGlobals();
+    expect(leads).toHaveLength(1);
+    expect(leads[0].title).toBe("Need a website built");
+    expect(leads[0].id).toBe(redditLeadId("https://www.reddit.com/r/website/comments/1xf63in/"));
+    expect(leads[0].origin).toBe("r/website");
+  });
+
+  it("falls back to SerpApi when Serper fails", async () => {
+    const { searchWeb } = await import("../src/leads/sources/websearch");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("nope", { status: 401 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ organic_results: [{ title: "Seeking GTM help", link: "https://x.com/someone/status/12345?s=20", snippet: "seeking a GTM consultant", date: "1 day ago" }] })),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const leads = await searchWeb("x", "q", 1, 10, { SERPER_API_KEY: "a", SERPAPI_KEY: "b" });
+    vi.unstubAllGlobals();
+    expect(leads).toHaveLength(1);
+    expect(leads[0]).toMatchObject({ source: "x", url: "https://x.com/someone/status/12345" });
   });
 });

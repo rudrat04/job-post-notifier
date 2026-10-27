@@ -8,6 +8,7 @@ import { searchFreelancer } from "./sources/freelancer";
 import { dedupeFunding, searchFunding } from "./sources/funding";
 import { searchHackerNews } from "./sources/hackernews";
 import { batchQueries, searchReddit } from "./sources/reddit";
+import { buildQuery, hasSearchKey, searchWeb } from "./sources/websearch";
 import type { Lead } from "./types";
 
 const args = new Set(process.argv.slice(2));
@@ -19,6 +20,10 @@ const errorMessage = (err: unknown) => (err instanceof Error ? err.message : Str
 
 async function main() {
   const config = await loadLeadsConfig();
+  // Nothing runs on weekends, so Monday has to look back over Saturday and Sunday too.
+  const isMonday = new Date().getUTCDay() === 1;
+  const windowDays = isMonday ? Math.max(3, config.max_age_days) : config.max_age_days;
+  config.max_age_days = windowDays;
   const match = buildLeadMatcher(config);
   const failures: string[] = [];
   const limit = pLimit(4);
@@ -50,6 +55,21 @@ async function main() {
         searchFreelancer(q, config.max_age_days, { minBudgetUsd: freelancer!.min_budget_usd, maxBids: freelancer!.max_bids }),
       ),
     );
+
+  const web = config.web_search;
+  if (web && !hasSearchKey()) console.warn("Skipping web search (set SERPER_API_KEY or SERPAPI_KEY)");
+  if (web && hasSearchKey()) {
+    const queries = web.platforms.flatMap((platform) =>
+      web.groups.map((group) => ({ platform, group, q: buildQuery(platform, web.asks, group) })),
+    );
+    for (const { platform, group, q } of queries.slice(0, web.max_queries))
+      tasks.push(
+        task(`Web ${platform} [${group.slice(0, 3).join(", ")}…]`, () =>
+          searchWeb(platform, q, Math.ceil(windowDays), web.results_per_query),
+        ),
+      );
+    if (queries.length > web.max_queries) console.warn(`Web search capped at ${web.max_queries} of ${queries.length} queries`);
+  }
 
   const fundingKeywords = new RegExp(`(?:${(funding?.keywords ?? []).join("|")})`, "i");
   const fundingTasks = (funding?.queries ?? []).map((q) =>

@@ -11,8 +11,13 @@ const leadsSchema = z.object({
    * offering their own services (`exclude`). Regex fragments, case-insensitive.
    */
   services: z.array(z.string()).min(1),
+  /** Asking verbs: "looking for", "need", "seeking", "hire"... */
   intent: z.array(z.string()).min(1),
+  /** Who is being asked for: freelancer, consultant, developer, someone... */
+  roles: z.array(z.string()).min(1),
   exclude: z.array(z.string()).default([]),
+  /** Like `exclude`, but checked against the post text as well as the title (employers' own hiring posts, adverts). */
+  exclude_text: z.array(z.string()).default([]),
   reddit: z
     .object({
       /** Searched together, so one request covers all of them. */
@@ -20,6 +25,24 @@ const leadsSchema = z.object({
       /** Combined into a few "a OR b OR c" searches, because Reddit rate-limits many requests. */
       queries: z.array(z.string()).min(1),
       queries_per_search: z.number().int().positive().default(12),
+    })
+    .optional(),
+  /**
+   * Google search through Serper (SERPER_API_KEY) or SerpApi (SERPAPI_KEY), to find
+   * "looking for / seeking" posts on Reddit, X and LinkedIn. One query is sent per
+   * platform per service group: site:PLATFORM (asks) (services).
+   */
+  web_search: z
+    .object({
+      /** Which platforms to search. */
+      platforms: z.array(z.enum(["reddit", "x", "linkedin"])).min(1),
+      /** Phrases that show someone is asking for help. */
+      asks: z.array(z.string()).min(1),
+      /** Each group of service words becomes its own query. */
+      groups: z.array(z.array(z.string()).min(1)).min(1),
+      results_per_query: z.number().int().positive().default(10),
+      /** Safety cap on searches per run, to protect the monthly quota. */
+      max_queries: z.number().int().positive().default(15),
     })
     .optional(),
   hackernews: z.object({ queries: z.array(z.string()).min(1) }).optional(),
