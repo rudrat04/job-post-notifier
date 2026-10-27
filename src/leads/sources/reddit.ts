@@ -42,7 +42,7 @@ export function parseRedditFeed(xml: string): Lead[] {
   });
 }
 
-const GAP_MS = 6000;
+const GAP_MS = 15000;
 let blocked = false;
 
 /**
