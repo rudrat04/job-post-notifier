@@ -13,6 +13,7 @@ import type { Lead } from "./types";
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const bootstrap = args.has("--bootstrap");
+const testEmail = args.has("--test-email");
 
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
@@ -85,6 +86,12 @@ async function main() {
   const digest = buildLeadsDigest(fresh, failures);
   if (dryRun) {
     console.log(`\n--- dry run (nothing sent or saved) ---\n${fresh.length ? digest.text : "No new leads."}`);
+    return;
+  }
+  if (testEmail) {
+    // Sends the real digest to EMAIL_TO but records nothing, so these leads still arrive in the next real run.
+    await sendEmail({ ...digest, subject: `[TEST] ${digest.subject}` });
+    console.log(`Test email sent with ${fresh.length} leads; nothing was saved.`);
     return;
   }
   if (!fresh.length) {

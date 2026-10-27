@@ -13,7 +13,8 @@
     "discover": "node --env-file-if-exists=.env --import tsx src/discover.ts",
     "leads": "node --env-file-if-exists=.env --import tsx src/leads/index.ts",
     "leads:dry-run": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --dry-run",
-    "leads:bootstrap": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --bootstrap"
+    "leads:bootstrap": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --bootstrap",
+    "leads:test-email": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --test-email"
   },
   "engines": {
     "node": ">=22"
