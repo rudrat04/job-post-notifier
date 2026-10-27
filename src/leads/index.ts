@@ -39,7 +39,7 @@ async function main() {
 
   const tasks: Promise<Lead[]>[] = [];
   const { reddit, hackernews, freelancer, funding } = config;
-  for (const q of batchQueries(reddit?.queries ?? [], reddit?.queries_per_search ?? 4))
+  for (const q of batchQueries(reddit?.queries ?? [], reddit?.queries_per_search ?? 12))
     tasks.push(task(`Reddit ${q}`, () => searchReddit(reddit!.subreddits, q), redditLimit));
   for (const q of hackernews?.queries ?? [])
     tasks.push(task(`Hacker News "${q}"`, () => searchHackerNews(q, config.max_age_days)));

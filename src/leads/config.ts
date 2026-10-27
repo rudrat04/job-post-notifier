@@ -19,7 +19,7 @@ const leadsSchema = z.object({
       subreddits: z.array(z.string()).min(1),
       /** Combined into a few "a OR b OR c" searches, because Reddit rate-limits many requests. */
       queries: z.array(z.string()).min(1),
-      queries_per_search: z.number().int().positive().default(4),
+      queries_per_search: z.number().int().positive().default(12),
     })
     .optional(),
   hackernews: z.object({ queries: z.array(z.string()).min(1) }).optional(),
