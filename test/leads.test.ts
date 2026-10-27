@@ -55,12 +55,29 @@ describe("lead filter", () => {
     ["Need a tutor", "for b2b sales classes"],
     ["Looking for affordable shared WordPress hosting", ""],
     ["Francisc Toth's Post", "Founders ask me every month: Do I need a web designer or a web developer?"],
+    ["Hridoy Reh", "Claude will recommend your website. 1. Visit the submit-url page. 2. Enter your website URL."],
+    ["European Centre for Press and Media Freedom", "We need support with the content behind it. We're looking for a website content management internship"],
     ["Katie Schwartz posted this", "They're hiring a GTM Associate right now! Looking for someone analytical."],
     ["Tracking completed meetings in HubSpot", "I need to see which calls were completed in the CRM"],
     ["Radish's Post", "We're actively looking for our next HubSpot specialist. Join our team! #hiring"],
     ["If I started my cleaning business from scratch, this is how I'd get clients", ""],
   ])("drops %s", (title, text) => {
     expect(match(lead(title, text))).toBe(false);
+  });
+
+  it("drops the 'Need a website? We're offering…' advert, full and truncated", () => {
+    const body = `Whether you need an e-commerce store or a simple website to showcase your business, we can help you get started.
+      Types of websites we can build: E-commerce Websites, Business & Startup Websites, Landing Pages.
+      Starting Price: Just ₹1,699. Want to take your business online without spending a fortune? Interested?
+      Comment "WEBSITE" below, or DM me "WEBSITE" to discuss your requirements. Let's turn your idea into a website!`;
+    expect(match(lead("Need a Website for Your Business or Personal Brand? We’re offering website development services starting at just ₹1,699!", body))).toBe(false);
+    // Search engines cut the title short, so the offer must be caught from the text.
+    expect(match(lead("Need a Website for Your Business or Personal Brand? We' ...", "Whether you need an e-commerce store or a simple website to showcase your business, we can help you get started."))).toBe(false);
+    expect(match(lead("Need a website built?", "Quick turnaround. Starting at $99. DM me to book a call."))).toBe(false);
+  });
+
+  it("keeps a real request that talks about my own business", () => {
+    expect(match(lead("Need a landing page for my SaaS", "I run a small B2B SaaS and need someone to build a landing page. Budget around $400. Please share past work."))).toBe(true);
   });
 
   it("drops leads older than max_age_days", () => {
@@ -158,6 +175,13 @@ describe("leads email", () => {
 });
 
 describe("web search", () => {
+  it("keeps only the post's own text from a Google snippet", async () => {
+    const { ownText } = await import("../src/leads/sources/websearch");
+    expect(ownText("hey does anyone know the cost for a 4 page site? · I need a website developer ...")).toBe("hey does anyone know the cost for a 4 page site?");
+    expect(ownText("Looking for a creative web designer. Please reach out | 119 comments on LinkedIn.")).toBe("Looking for a creative web designer. Please reach out");
+    expect(ownText("Plain text with no markers")).toBe("Plain text with no markers");
+  });
+
   it("builds one query per platform and group", async () => {
     const { buildQuery } = await import("../src/leads/sources/websearch");
     expect(buildQuery("reddit", ["looking for", "seeking"], ["website", "landing page"])).toBe(

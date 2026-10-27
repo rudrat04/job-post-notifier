@@ -35,7 +35,7 @@ For employers' own boards, `npm run discover` reads company names from `config/c
 
 ## Freelance leads
 `npm run leads` finds people who may need your services (websites, GTM engineering, GTM strategy) and emails them separately from the job digest. Everything is set in `config/leads.yaml`.
-- **Reddit** (search feed, no key), **Hacker News** (Algolia search) and **Freelancer.com** (public API): a post counts when it asks for help close to one of your services, and people advertising themselves are dropped. Freelancer projects are limited by budget and bid count.
+- **Reddit** (search feed, no key) and **Hacker News** (Algolia search): a post counts when it asks for help close to one of your services, and people advertising themselves are dropped.
 - **Web search** (Serper, with SerpApi as a fallback): Google results for "looking for / seeking" posts on Reddit, X and LinkedIn, one search per platform and service group. Needs `SERPER_API_KEY` or `SERPAPI_KEY`. Monday looks back three days because nothing runs on weekends.
 - **Funding news** (Google News): newly funded Indian startups, one per company.
 - Companies hiring GTM or RevOps roles in the job digest are leads too.

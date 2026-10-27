@@ -48,6 +48,15 @@ interface Result {
   date?: string;
 }
 
+/**
+ * Google's snippet for a Reddit thread often continues with text from other threads
+ * ("... · r/Wordpress • 9mo ago ..."), and LinkedIn's ends with "| 119 comments". Keep only
+ * the post's own text so other people's requests don't make this post look like one.
+ */
+export function ownText(snippet: string): string {
+  return snippet.split(/\s+[·•]\s+|\s+\|\s+\d+\s+(?:comments?|reactions?|likes?)\b/i)[0].trim();
+}
+
 function leadFrom(platform: Platform, r: Result, now: number): Lead | null {
   if (!r.link || !r.title || !POST_URL[platform].test(r.link)) return null;
   const url = r.link.split("?")[0];
@@ -56,7 +65,7 @@ function leadFrom(platform: Platform, r: Result, now: number): Lead | null {
     id: platform === "reddit" ? redditLeadId(url) : createHash("sha1").update(`${platform}:${key}`).digest("hex"),
     source: platform,
     title: htmlToText(r.title).replace(/\s*:\s*r\/\w+$/, ""),
-    text: htmlToText(r.snippet ?? ""),
+    text: ownText(htmlToText(r.snippet ?? "")),
     url,
     postedAt: parseResultDate(r.date, now),
     origin: platform === "reddit" ? url.match(/\/r\/([^/]+)/)?.[0].replace(/^\//, "") : undefined,

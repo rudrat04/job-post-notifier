@@ -8,6 +8,8 @@ const normalize = (s: string) => s.toLowerCase().replace(/[‘’`´]/g, "'");
 
 /** Only the start of a long post is read; the ask is nearly always up front. */
 const READ_CHARS = 500;
+/** How much of a post is read when looking for advert signals. */
+const FULL_CHARS = 4000;
 /** Filler words allowed between an asking verb and what is asked for ("looking for a good freelance GTM consultant"). */
 const GAP = "(?:\\w+\\W+){0,2}?";
 
@@ -42,7 +44,8 @@ export function buildLeadMatcher(config: LeadsConfig) {
     const body = normalize(lead.text).slice(0, READ_CHARS);
     const text = `${title}. ${body}`;
     if (exclude?.test(title)) return false;
-    if (excludeText?.test(text)) return false;
+    // Adverts give themselves away late ("starting at ₹1,699 ... DM me"), so read the whole post for these.
+    if (excludeText?.test(`${title}. ${normalize(lead.text).slice(0, FULL_CHARS)}`)) return false;
     // Adverts often open with "I will build your website…".
     if (/^(?:i will|i can|we offer|i offer)\b/.test(body.trim())) return false;
     // A "[hiring]" tag counts as an ask, so only a service needs to be named.
