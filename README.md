@@ -1,6 +1,6 @@
 # Job Post Notifier
 
-Checks the public job feeds of Greenhouse, Lever, Ashby and Workable boards for roles that match `config/filters.yaml`. It emails a digest of postings it hasn't sent before. GitHub Actions runs it at 13:00 and 18:00 IST, and when nothing new turns up, no email goes out.
+Checks the public job feeds of Greenhouse, Lever, Ashby and Workable boards for roles that match `config/filters.yaml`. It emails a digest of postings it hasn't sent before. It runs as a GitHub Actions workflow started by cron-job.org at 13:00 and 18:00 IST (GitHub's own scheduler runs hours late, so it is not used), and when nothing new turns up, no email goes out.
 
 ## Configure
 - `config/companies.yaml`: career page URLs. The ATS is detected from the URL, or from the page's HTML for a company's own careers page.
@@ -40,4 +40,4 @@ For employers' own boards, `npm run discover` reads company names from `config/c
 - **Funding news** (Google News): newly funded Indian startups, one per company.
 - Companies hiring GTM or RevOps roles in the job digest are leads too.
 
-`npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` runs at 13:15 IST, Monday to Friday. Leads are remembered in the `seen_leads` table (`supabase/migrations/002_seen_leads.sql`). Reddit rate-limits quickly, so if it blocks a run it is listed under "couldn't check".
+`npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` is started by cron-job.org at 13:15 IST, Monday to Friday. Leads are remembered in the `seen_leads` table (`supabase/migrations/002_seen_leads.sql`). Reddit rate-limits quickly, so if it blocks a run it is listed under "couldn't check".
