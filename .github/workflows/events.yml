@@ -1,4 +1,4 @@
-name: Freelance leads
+name: Free events
 
 on:
   workflow_dispatch:
@@ -9,17 +9,17 @@ on:
         options: [normal, dry-run, bootstrap]
         default: normal
 
+concurrency:
+  group: free-events
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
-concurrency:
-  group: freelance-leads
-  cancel-in-progress: false
-
 jobs:
-  leads:
+  events:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,19 +27,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Run lead finder
+      - name: Run events
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
-          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
           MODE: ${{ inputs.mode || 'normal' }}
         run: |
           case "$MODE" in
-            dry-run)   npx tsx src/leads/index.ts --dry-run ;;
-            bootstrap) npx tsx src/leads/index.ts --bootstrap ;;
-            *)         npx tsx src/leads/index.ts ;;
+            dry-run)   npx tsx src/events/index.ts --dry-run ;;
+            bootstrap) npx tsx src/events/index.ts --bootstrap ;;
+            *)         npx tsx src/events/index.ts ;;
           esac

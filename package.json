@@ -11,10 +11,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "discover": "node --env-file-if-exists=.env --import tsx src/discover.ts",
-    "leads": "node --env-file-if-exists=.env --import tsx src/leads/index.ts",
-    "leads:dry-run": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --dry-run",
-    "leads:bootstrap": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --bootstrap",
-    "leads:test-email": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --test-email"
+    "events": "node --env-file-if-exists=.env --import tsx src/events/index.ts",
+    "events:dry-run": "node --env-file-if-exists=.env --import tsx src/events/index.ts --dry-run",
+    "events:bootstrap": "node --env-file-if-exists=.env --import tsx src/events/index.ts --bootstrap"
   },
   "engines": {
     "node": ">=22"

@@ -33,11 +33,10 @@ The same role found on several sites is emailed once, matched on company and tit
 
 For employers' own boards, `npm run discover` reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes.
 
-## Freelance leads
-`npm run leads` finds people who may need your services (websites, GTM engineering, GTM strategy) and emails them separately from the job digest. Everything is set in `config/leads.yaml`.
-- **Reddit** (search feed, no key) and **Hacker News** (Algolia search): a post counts when it asks for help close to one of your services, and people advertising themselves are dropped.
-- **Web search** (Serper, with SerpApi as a fallback): Google results for "looking for / seeking" posts on Reddit, X and LinkedIn, one search per platform and service group. Needs `SERPER_API_KEY` or `SERPAPI_KEY`. Monday looks back three days because nothing runs on weekends.
-- **Funding news** (Google News): newly funded Indian startups, one per company.
-- Companies hiring GTM or RevOps roles in the job digest are leads too.
+## Free events
+`npm run events` finds free tech, product and marketing events with registration still open and emails them. It sends nothing when there is no new event. Everything is set in `config/events.yaml`.
+- **In person** in Mumbai, Pune, Ahmedabad and Bengaluru, from [Luma](https://luma.com) (free, not full, no waitlist) and Eventbrite.
+- **Virtual** events from Eventbrite's online listings. Each Eventbrite candidate's page is opened to confirm it is free and on sale.
+- Events starting within 30 days whose title or host matches `topics` and not `exclude`. The same event on both sites, or a session repeated on many dates, is sent once.
 
-`npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` is started by cron-job.org at 13:15 IST, Monday to Friday. Leads are remembered in the `seen_leads` table (`supabase/migrations/002_seen_leads.sql`). Reddit rate-limits quickly, so if it blocks a run it is listed under "couldn't check".
+`npm run events:dry-run` prints without sending or saving. The workflow `events.yml` is started by cron-job.org at 09:00 IST. Sent events are remembered in the `seen_events` table (`supabase/migrations/003_seen_events.sql`).

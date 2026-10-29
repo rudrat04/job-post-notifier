@@ -1,0 +1,115 @@
+# Free tech, product and marketing events with registration still open.
+# In-person events come from the cities below; virtual events come from Eventbrite's online listings.
+
+# Only events starting within this many days.
+window_days: 30
+
+cities:
+  - name: Mumbai
+    lat: 19.076
+    lon: 72.8777
+    places: [mumbai, navi mumbai, thane, bandra, andheri, powai]
+  - name: Pune
+    lat: 18.5204
+    lon: 73.8567
+    places: [pune, pimpri]
+  - name: Ahmedabad
+    lat: 23.0225
+    lon: 72.5714
+    places: [ahmedabad, gandhinagar]
+  - name: Bengaluru
+    lat: 12.9716
+    lon: 77.5946
+    places: [bengaluru, bangalore]
+
+virtual: true
+
+# An event's title (or its host) must match at least one. Regex fragments, whole-word, case-insensitive.
+topics:
+  - tech(?:nology)?
+  - ai
+  - artificial intelligence
+  - genai
+  - llms?
+  - agents?
+  - startups?
+  - founders?
+  - saas
+  - product
+  - marketing
+  - growth
+  - gtm
+  - go[- ]to[- ]market
+  - sales
+  - revops
+  - revenue
+  - brand(?:ing)?
+  - content
+  - seo
+  - no[- ]?code
+  - low[- ]?code
+  - automation
+  - data
+  - analytics
+  - cloud
+  - developers?
+  - devops
+  - engineering
+  - design
+  - ux
+  - hackathon
+  - builders?
+  - web3
+  - cyber ?security
+  - demo day
+  - fintech
+  - open ?source
+
+# Dropped when the title matches any of these.
+exclude:
+  - music
+  - concert
+  - party
+  - yoga
+  - dating
+  - singles
+  - comedy
+  - fitness
+  - meditation
+  - wedding
+  - astrology
+  - forex
+  - trading
+  - mlm
+  - network marketing
+  - weight loss
+  - real estate
+  - car
+  - travel
+  - cooking
+  - art exhibition
+  - football
+  - cricket
+  - garba
+  - dance
+  - bollywood
+  - open mic
+  - drum
+  - paint(?:ing)?
+  # free demos that sell a paid course
+  - demo (?:class|session)
+  - placement
+  - training
+  - courses?
+  - certification
+  - bootcamp
+
+luma:
+  # Pages of 50 events fetched per city.
+  max_pages: 4
+
+eventbrite:
+  # Listing pages fetched per city and for online events.
+  max_pages: 2
+  # Candidate event pages opened to confirm the event is free and on sale.
+  max_checks: 80
