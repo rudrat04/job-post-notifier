@@ -3,9 +3,9 @@ import { sendEmail } from "../email";
 import { createStore } from "../store";
 import { loadEvents } from "./config";
 import { buildEventsDigest } from "./email";
-import { confirmEventbrite, fetchEventbriteCity, fetchEventbriteOnline } from "./eventbrite";
 import { buildEventMatcher, dedupeEvents } from "./filter";
 import { fetchLuma } from "./luma";
+import { fetchMeetupOnline } from "./meetup";
 import type { EventItem } from "./types";
 
 const args = new Set(process.argv.slice(2));
@@ -30,19 +30,13 @@ async function main() {
       }
     });
 
-  const lumaTasks = cfg.cities.map((c) => run(`Luma ${c.name}`, () => fetchLuma(c, cfg)));
-  const ebTasks = [
-    ...cfg.cities.map((c) => run(`Eventbrite ${c.name}`, () => fetchEventbriteCity(c, cfg))),
-    ...(cfg.virtual ? [run("Eventbrite online", () => fetchEventbriteOnline(cfg))] : []),
+  const tasks = [
+    ...cfg.cities.map((c) => run(`Luma ${c.name}`, () => fetchLuma(c, cfg))),
+    ...(cfg.virtual ? cfg.meetup.online_queries.map((q) => run(`Meetup online "${q}"`, () => fetchMeetupOnline(q))) : []),
   ];
+  const found = (await Promise.all(tasks)).flat().filter((e) => match(e));
 
-  const luma = (await Promise.all(lumaTasks)).flat().filter((e) => match(e));
-  // Eventbrite lists don't show price or ticket status, so confirm each topic match on its own page.
-  const ebCandidates = (await Promise.all(ebTasks)).flat().filter((e) => match(e));
-  const eventbrite = await confirmEventbrite(ebCandidates, cfg.eventbrite.max_checks);
-  console.log(`Eventbrite: ${ebCandidates.length} topic matches, ${eventbrite.length} free and on sale`);
-
-  const matched = dedupeEvents([...luma, ...eventbrite]);
+  const matched = dedupeEvents(found);
 
   const store = createStore("seen_events");
   if (!store && !dryRun) throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");

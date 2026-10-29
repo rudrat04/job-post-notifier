@@ -18,12 +18,9 @@ const eventsSchema = z.object({
   topics: z.array(z.string()).min(1),
   exclude: z.array(z.string()).default([]),
   luma: z.object({ max_pages: z.number().int().positive().default(4) }).default({ max_pages: 4 }),
-  eventbrite: z
-    .object({
-      max_pages: z.number().int().positive().default(2),
-      max_checks: z.number().int().positive().default(80),
-    })
-    .default({ max_pages: 2, max_checks: 80 }),
+  meetup: z
+    .object({ online_queries: z.array(z.string()).default([]) })
+    .default({ online_queries: [] }),
 });
 
 export type EventsConfig = z.infer<typeof eventsSchema>;

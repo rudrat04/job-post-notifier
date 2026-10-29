@@ -1,5 +1,5 @@
 # Free tech, product and marketing events with registration still open.
-# In-person events come from the cities below; virtual events come from Eventbrite's online listings.
+# In-person events come from the cities below; virtual events come from Meetup's online search.
 
 # Only events starting within this many days.
 window_days: 30
@@ -108,8 +108,17 @@ luma:
   # Pages of 50 events fetched per city.
   max_pages: 4
 
-eventbrite:
-  # Listing pages fetched per city and for online events.
-  max_pages: 2
-  # Candidate event pages opened to confirm the event is free and on sale.
-  max_checks: 80
+meetup:
+  # Meetup is searched by keyword for free online events with RSVP open.
+  online_queries:
+    - product marketing
+    - product management
+    - growth marketing
+    - gtm
+    - sales operations
+    - revops
+    - startup
+    - ai
+    - automation
+    - no code
+    - marketing

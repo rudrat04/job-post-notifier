@@ -1,4 +1,4 @@
-export type EventSource = "luma" | "eventbrite";
+export type EventSource = "luma" | "meetup";
 
 export interface EventItem {
   /** Dedupe key: sha1 of the event URL. */

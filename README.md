@@ -35,8 +35,8 @@ For employers' own boards, `npm run discover` reads company names from `config/c
 
 ## Free events
 `npm run events` finds free tech, product and marketing events with registration still open and emails them. It sends nothing when there is no new event. Everything is set in `config/events.yaml`.
-- **In person** in Mumbai, Pune, Ahmedabad and Bengaluru, from [Luma](https://luma.com) (free, not full, no waitlist) and Eventbrite.
-- **Virtual** events from Eventbrite's online listings. Each Eventbrite candidate's page is opened to confirm it is free and on sale.
+- **In person** in Mumbai, Pune, Ahmedabad and Bengaluru, from [Luma](https://luma.com): free, not full, no waitlist.
+- **Virtual** events from [Meetup](https://www.meetup.com)'s online search, free with RSVP open. Eventbrite is not used because it blocks GitHub's servers.
 - Events starting within 30 days whose title or host matches `topics` and not `exclude`. The same event on both sites, or a session repeated on many dates, is sent once.
 
 `npm run events:dry-run` prints without sending or saving. The workflow `events.yml` is started by cron-job.org at 09:00 IST. Sent events are remembered in the `seen_events` table (`supabase/migrations/003_seen_events.sql`).

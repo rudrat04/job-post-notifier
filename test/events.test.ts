@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EventsConfig } from "../src/events/config";
 import { buildEventMatcher, dedupeEvents } from "../src/events/filter";
-import { isOpenAndFree, parseEventbriteList } from "../src/events/eventbrite";
+import { parseMeetup } from "../src/events/meetup";
 import { parseLuma } from "../src/events/luma";
 import type { EventItem } from "../src/events/types";
 
@@ -13,7 +13,7 @@ const cfg = {
   topics: ["ai", "marketing", "startups?"],
   exclude: ["party", "training"],
   luma: { max_pages: 1 },
-  eventbrite: { max_pages: 1, max_checks: 5 },
+  meetup: { online_queries: [] },
 } as EventsConfig;
 const now = Date.parse("2026-10-29T00:00:00Z");
 const day = (n: number) => new Date(now + n * 86_400_000).toISOString();
@@ -47,9 +47,9 @@ describe("event matcher", () => {
 describe("dedupeEvents", () => {
   it("keeps one event per title and place, preferring the soonest and Luma", () => {
     const out = dedupeEvents([
-      ev({ source: "eventbrite", url: "https://eb/1", start: "2026-11-01" }),
+      ev({ source: "meetup", url: "https://eb/1", start: "2026-11-01" }),
       ev({ source: "luma", url: "https://luma.com/a", start: "2026-11-01T10:00:00Z" }),
-      ev({ source: "eventbrite", url: "https://eb/2", start: "2026-11-09" }),
+      ev({ source: "meetup", url: "https://eb/2", start: "2026-11-09" }),
     ]);
     expect(out).toHaveLength(1);
     expect(out[0]!.source).toBe("luma");
@@ -84,24 +84,26 @@ describe("parseLuma", () => {
   });
 });
 
-describe("Eventbrite", () => {
-  const html = `<script type="application/ld+json">${JSON.stringify({
-    itemListElement: [
-      { item: { "@type": "Event", name: "AI &amp; You", url: "https://eventbrite.com/e/1", startDate: "2026-11-02", location: { address: { addressLocality: "Pune" } } } },
-      { item: { "@type": "Event", name: "Far", url: "https://eventbrite.com/e/2", startDate: "2026-11-02", location: { address: { addressLocality: "Delhi" } } } },
-    ],
-  })}</script>`;
-  it("parses a city list and drops other cities", () => {
-    const out = parseEventbriteList(html, city);
-    expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ title: "AI & You", where: "Pune", virtual: false });
+describe("parseMeetup", () => {
+  const page = (events: Record<string, unknown>) =>
+    `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: { pageProps: { __APOLLO_STATE__: { "Group:1": { name: "Growth Guild" }, ...events } } },
+    })}</script>`;
+  const base = { eventType: "ONLINE", rsvpState: "JOIN_OPEN", feeSettings: null, group: { __ref: "Group:1" }, title: "AI Talk", dateTime: "2026-11-02T19:00:00+05:30", eventUrl: "https://www.meetup.com/g/events/1/" };
+  it("keeps free online events with open RSVP", () => {
+    expect(parseMeetup(page({ "Event:1": base }))[0]).toMatchObject({ where: "Online", virtual: true, host: "Growth Guild", source: "meetup" });
   });
-  it("labels online listings", () => {
-    expect(parseEventbriteList(html, "online")[0]).toMatchObject({ where: "Online", virtual: true });
+  it("drops paid, closed and in-person events", () => {
+    const out = parseMeetup(
+      page({
+        "Event:1": { ...base, feeSettings: { amount: 5 } },
+        "Event:2": { ...base, rsvpState: "CLOSED" },
+        "Event:3": { ...base, eventType: "PHYSICAL" },
+      }),
+    );
+    expect(out).toHaveLength(0);
   });
-  it("confirms free events that are on sale", () => {
-    expect(isOpenAndFree('"isFree":true ... "salesStatus":{"salesStatus":"on_sale"')).toBe(true);
-    expect(isOpenAndFree('"isFree":true "salesStatus":{"salesStatus":"sold_out"')).toBe(false);
-    expect(isOpenAndFree('"isFree":false "salesStatus":{"salesStatus":"on_sale"')).toBe(false);
+  it("returns nothing when the page has no data", () => {
+    expect(parseMeetup("<html></html>")).toEqual([]);
   });
 });
