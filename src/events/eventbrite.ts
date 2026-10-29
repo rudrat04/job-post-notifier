@@ -1,4 +1,4 @@
-import { getText, htmlToText } from "../http";
+import { htmlToText, request } from "../http";
 import type { City, EventsConfig } from "./config";
 import { eventId, inCity } from "./filter";
 import type { EventItem } from "./types";
@@ -42,6 +42,15 @@ export function parseEventbriteList(html: string, where: City | "online"): Event
 export function isOpenAndFree(html: string): boolean {
   return /"isFree":true/.test(html) && /"salesStatus":\{"salesStatus":"on_sale"/.test(html);
 }
+
+// Eventbrite refuses requests that don't look like a browser.
+const BROWSER_HEADERS = {
+  "user-agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+  accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "accept-language": "en-US,en;q=0.9",
+};
+const getText = async (url: string) => (await request(url, { headers: BROWSER_HEADERS })).text();
 
 const listUrl = (slug: string, page: number) =>
   `https://www.eventbrite.com/d/${slug}/free--events/${page > 1 ? `?page=${page}` : ""}`;
