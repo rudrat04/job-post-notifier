@@ -12,6 +12,8 @@ interface LumaEntry {
     geo_address_info?: { city?: string };
   };
   calendar?: { name?: string };
+  hosts?: { name?: string }[];
+  guest_count?: number;
   ticket_info?: { is_free?: boolean; is_sold_out?: boolean; require_approval?: boolean } | null;
   registration_availability?: string;
 }
@@ -46,6 +48,8 @@ export function parseLuma(entries: LumaEntry[], city: City): EventItem[] {
         where: city.name,
         virtual: false,
         host: e.calendar?.name,
+        organizers: [e.calendar?.name, ...(e.hosts ?? []).map((h) => h.name)].filter(Boolean).join(" "),
+        guests: e.guest_count,
         needsApproval: e.ticket_info?.require_approval || undefined,
       };
     });

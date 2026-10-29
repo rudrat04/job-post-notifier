@@ -11,6 +11,8 @@ import type { EventItem } from "./types";
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const bootstrap = args.has("--bootstrap");
+// With --dry-run, also list events that were already emailed.
+const includeSeen = args.has("--all");
 
 async function main() {
   const cfg = await loadEvents();
@@ -34,14 +36,14 @@ async function main() {
     ...cfg.cities.map((c) => run(`Luma ${c.name}`, () => fetchLuma(c, cfg))),
     ...(cfg.virtual ? cfg.meetup.online_queries.map((q) => run(`Meetup online "${q}"`, () => fetchMeetupOnline(q))) : []),
   ];
-  const found = (await Promise.all(tasks)).flat().filter((e) => match(e));
+  const found = (await Promise.all(tasks)).flat().map(match.markBig).filter((e) => match(e));
 
   const matched = dedupeEvents(found);
 
   const store = createStore("seen_events");
   if (!store && !dryRun) throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
   const seen = store ? await store.seenIds(matched.map((e) => e.id)) : new Set<string>();
-  const fresh = matched.filter((e) => !seen.has(e.id));
+  const fresh = matched.filter((e) => (dryRun && includeSeen) || !seen.has(e.id));
   console.log(`${matched.length} matching, ${fresh.length} new, ${failures.length} failed`);
   for (const f of failures) console.log(`  failed: ${f}`);
 

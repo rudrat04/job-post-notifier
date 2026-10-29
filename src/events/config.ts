@@ -17,6 +17,13 @@ const eventsSchema = z.object({
   virtual: z.boolean().default(true),
   topics: z.array(z.string()).min(1),
   exclude: z.array(z.string()).default([]),
+  big: z
+    .object({
+      min_guests: z.number().int().positive().default(200),
+      brands: z.array(z.string()).default([]),
+      community_words: z.array(z.string()).default([]),
+    })
+    .default({ min_guests: 200, brands: [], community_words: [] }),
   luma: z.object({ max_pages: z.number().int().positive().default(4) }).default({ max_pages: 4 }),
   meetup: z
     .object({ online_queries: z.array(z.string()).default([]) })

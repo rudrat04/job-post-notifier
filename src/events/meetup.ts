@@ -12,6 +12,7 @@ interface MeetupEvent {
   rsvpState?: string;
   feeSettings?: unknown;
   group?: { __ref?: string };
+  rsvps?: { totalCount?: number };
 }
 
 // Meetup serves its search results as page data; it refuses requests that don't look like a browser.
@@ -44,6 +45,7 @@ export function parseMeetup(html: string): EventItem[] {
       where: "Online",
       virtual: true,
       host: groupName(e.group?.__ref),
+      guests: e.rsvps?.totalCount,
     }));
 }
 

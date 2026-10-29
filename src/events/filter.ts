@@ -22,15 +22,34 @@ export function buildEventMatcher(cfg: EventsConfig) {
   const exclude = anyOf(cfg.exclude);
   const windowMs = cfg.window_days * 86_400_000;
 
-  return function match(e: EventItem, now = Date.now()): boolean {
+  const brands = anyOf(cfg.big.brands);
+
+  const community = anyOf(cfg.big.community_words);
+  // The company must be the organizer (calendar or host), not just named in the title, and not
+  // a student chapter or user group that borrows its name. Meetup groups are community-run, so
+  // only Luma organizers count.
+  const byBrand = (e: EventItem) => {
+    const organizers = normalize(e.organizers ?? "");
+    return e.source === "luma" && !!brands && brands.test(organizers) && !community?.test(organizers);
+  };
+
+  /** Big when a well-known company is behind it or many people have registered. */
+  function markBig(e: EventItem): EventItem {
+    const byGuests = (e.guests ?? 0) >= cfg.big.min_guests;
+    return { ...e, big: byBrand(e) || byGuests };
+  }
+
+  const matchEvent = function match(e: EventItem, now = Date.now()): boolean {
     const start = Date.parse(e.start);
     // A date-only start means the whole day, so keep today's events until the day ends.
     const endOfStart = /^\d{4}-\d{2}-\d{2}$/.test(e.start) ? start + 86_400_000 : start;
     if (Number.isNaN(start) || endOfStart < now || start - now > windowMs) return false;
     const title = normalize(e.title);
     if (exclude?.test(title)) return false;
-    return topics.test(title) || topics.test(normalize(e.host ?? ""));
+    return topics.test(title) || topics.test(normalize(e.host ?? "")) || byBrand(e);
   };
+
+  return Object.assign(matchEvent, { markBig });
 }
 
 const titleKey = (e: EventItem) =>
@@ -52,7 +71,8 @@ export function dedupeEvents(events: EventItem[]): EventItem[] {
     if (!cur) best.set(key, { ...e, id: key });
     else {
       const [a, b] = [rank(e), rank(cur)];
-      if (a[0] < b[0] || (a[0] === b[0] && a[1] < b[1])) best.set(key, { ...e, id: key });
+      const winner = a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]) ? e : cur;
+      best.set(key, { ...winner, id: key, big: e.big || cur.big });
     }
   }
   return [...best.values()];

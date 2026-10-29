@@ -122,3 +122,76 @@ meetup:
     - automation
     - no code
     - marketing
+
+# "Big" events go in their own section at the top of the email. An event is big when a
+# well-known company is the organizer on Luma (its calendar or host), or when at least
+# min_guests people have already registered. A brand-organized event is kept even if its title
+# matches no topic. Everything else that matches a topic goes in "Other events".
+big:
+  min_guests: 200
+  # An organizer with one of these words is a local chapter or fan group, not the company.
+  community_words:
+    - students?
+    - collective
+    - chapter
+    - user group
+    - community
+    - groups?
+    - club
+    - meetups?
+    - campus
+    - fans?
+  brands:
+    - mongodb
+    - openai
+    - chatgpt
+    - anthropic
+    - claude
+    - google
+    - gemini
+    - aws
+    - amazon
+    - microsoft
+    - azure
+    - github
+    - meta
+    - nvidia
+    - databricks
+    - snowflake
+    - stripe
+    - notion
+    - figma
+    - hubspot
+    - salesforce
+    - atlassian
+    - adobe
+    - oracle
+    - ibm
+    - intel
+    - apple
+    - cloudflare
+    - vercel
+    - supabase
+    - postman
+    - razorpay
+    - zoho
+    - freshworks
+    - cred
+    - phonepe
+    - flipkart
+    - swiggy
+    - zomato
+    - y combinator
+    - yc
+    - product hunt
+    - sequoia
+    - peak xv
+    - accel
+    - nasscom
+    - tie (?:mumbai|pune|bangalore|global)
+    - startup india
+    - t-hub
+    - hasgeek
+    - google developer groups
+    - gdg
+    - aws user group

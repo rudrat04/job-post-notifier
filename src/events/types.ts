@@ -12,6 +12,12 @@ export interface EventItem {
   where: string;
   virtual: boolean;
   host?: string;
+  /** Everything that names who is behind the event: calendar, hosts, group. */
+  organizers?: string;
+  /** People registered so far. */
+  guests?: number;
   /** The host has to approve each registration. */
   needsApproval?: boolean;
+  /** A well-known company is behind it, or many people have registered. */
+  big?: boolean;
 }

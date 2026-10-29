@@ -12,6 +12,7 @@ const cfg = {
   virtual: true,
   topics: ["ai", "marketing", "startups?"],
   exclude: ["party", "training"],
+  big: { min_guests: 200, brands: ["mongodb", "google"], community_words: ["students?", "groups?"] },
   luma: { max_pages: 1 },
   meetup: { online_queries: [] },
 } as EventsConfig;
@@ -41,6 +42,22 @@ describe("event matcher", () => {
   });
   it("keeps a date-only event that is today", () => {
     expect(match(ev({ start: "2026-10-29" }), now + 3_600_000)).toBe(true);
+  });
+});
+
+describe("big events", () => {
+  const match = buildEventMatcher(cfg);
+  it("marks brand-hosted and well-attended events as big", () => {
+    expect(match.markBig(ev({ title: "MongoDB.local Mumbai", organizers: "MongoDB" })).big).toBe(true);
+    expect(match.markBig(ev({ organizers: "Google Developer Groups" })).big).toBe(false);
+    expect(match.markBig(ev({ title: "Google Business Profile tips", organizers: "Marketing Guild" })).big).toBe(false);
+    expect(match.markBig(ev({ source: "meetup", organizers: "MongoDB" })).big).toBe(false);
+    expect(match.markBig(ev({ guests: 250 })).big).toBe(true);
+    expect(match.markBig(ev({ guests: 20 })).big).toBe(false);
+  });
+  it("keeps a brand event with no topic word, but not a big off-topic crowd", () => {
+    expect(match(ev({ title: "MongoDB.local Mumbai", organizers: "MongoDB" }), now)).toBe(true);
+    expect(match(ev({ title: "Salsa Night", guests: 900 }), now)).toBe(false);
   });
 });
 

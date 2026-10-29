@@ -34,16 +34,31 @@ function group(events: EventItem[]): Map<string, EventItem[]> {
 const line = (e: EventItem) =>
   [formatStart(e.start), e.host, e.needsApproval ? "host approves registrations" : ""].filter(Boolean).join(" · ");
 
+function sections(events: EventItem[]): { heading: string; groups: Map<string, EventItem[]> }[] {
+  const big = events.filter((e) => e.big);
+  const other = events.filter((e) => !e.big);
+  return [
+    ...(big.length ? [{ heading: "Big events", groups: group(big) }] : []),
+    ...(other.length ? [{ heading: big.length ? "Other events" : "Events", groups: group(other) }] : []),
+  ];
+}
+
 export function buildEventsDigest(events: EventItem[], failures: string[] = [], now = new Date()) {
   const when = now.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: TZ });
-  const subject = `${events.length} free event${events.length === 1 ? "" : "s"} open for registration — ${when}`;
-  const groups = group(events);
+  const bigCount = events.filter((e) => e.big).length;
+  const subject = `${events.length} free event${events.length === 1 ? "" : "s"} open for registration${
+    bigCount ? ` (${bigCount} big)` : ""
+  } — ${when}`;
+  const parts = sections(events);
 
   const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;max-width:640px;margin:0 auto;padding:16px">
 <h2 style="margin:0 0 16px">${esc(subject)}</h2>
+${parts
+  .map(
+    ({ heading, groups }) => `<h2 style="margin:28px 0 4px;font-size:18px;border-bottom:2px solid #1a1a1a">${esc(heading)}</h2>
 ${[...groups]
   .map(
-    ([where, list]) => `<h3 style="margin:20px 0 6px;font-size:15px">${esc(where)}</h3>
+    ([where, list]) => `<h3 style="margin:16px 0 6px;font-size:15px">${esc(where)}</h3>
 <table style="border-collapse:collapse;width:100%">${list
       .map(
         (e) => `<tr><td style="padding:6px 0;border-bottom:1px solid #eee">
@@ -52,6 +67,8 @@ ${[...groups]
       )
       .join("")}</table>`,
   )
+  .join("\n")}`,
+  )
   .join("\n")}
 ${failures.length ? `<p style="margin-top:24px;color:#888;font-size:12px">${esc(`Couldn't check: ${failures.join("; ")}`)}</p>` : ""}
 </body></html>`;
@@ -59,7 +76,10 @@ ${failures.length ? `<p style="margin-top:24px;color:#888;font-size:12px">${esc(
   const text = [
     subject,
     "",
-    ...[...groups].flatMap(([where, list]) => [where, ...list.map((e) => `  • ${e.title} — ${line(e)}\n    ${e.url}`), ""]),
+    ...parts.flatMap(({ heading, groups }) => [
+      `== ${heading} ==`,
+      ...[...groups].flatMap(([where, list]) => [where, ...list.map((e) => `  • ${e.title} — ${line(e)}\n    ${e.url}`), ""]),
+    ]),
     ...(failures.length ? [`Couldn't check: ${failures.join("; ")}`] : []),
   ].join("\n");
 
