@@ -1,0 +1,57 @@
+# Google Maps prospecting: B2B, D2C and SME businesses that look like they need GTM
+# or automation help. Run weekly with `npm run prospects`; emailed as its own digest.
+#
+# Cost: Places API (New) Text Search. Asking for website, rating and review count puts
+# each request in the "Text Search Enterprise" SKU (1,000 free a month); adding reviews
+# moves it to "Enterprise + Atmosphere" (also 1,000 free a month, counted separately).
+# Every request is counted in Supabase (maps_usage) BEFORE it is sent, and the run stops
+# at either cap below, so the free tier is never exceeded. Failed requests aren't retried.
+budget:
+  # Hard monthly ceiling, far below the 1,000 free. Shared by all runs in a month.
+  max_requests_per_month: 200
+  # One weekly run: 4-5 runs a month × 40 = 160-200.
+  max_requests_per_run: 40
+
+# Each request is "<query> in <city>" and returns up to 20 businesses (one page only;
+# a second page would be another billed request). Runs rotate through every
+# query × city pair, so the whole list is covered every couple of weeks.
+cities:
+  - Ahmedabad
+  - Gandhinagar
+  - Mumbai
+  - Pune
+  - Bengaluru
+
+queries:
+  # D2C
+  - D2C brand
+  - skincare brand
+  - clothing brand
+  - organic food brand
+  # B2B
+  - manufacturer
+  - exporter
+  - logistics company
+  - IT services company
+  - SaaS company
+  # SMEs with lots of inbound enquiries
+  - real estate developer
+  - coaching institute
+  - interior designer
+  - dental clinic
+  - travel agency
+
+# Ask for up to 5 recent reviews per business, to spot complaints like "never called
+# back". This uses the Enterprise + Atmosphere SKU instead of Enterprise: same count of
+# requests, just a different (also 1,000 free) bucket.
+use_reviews: true
+
+# Skip businesses with fewer reviews than this (too small or too new to pay), or more
+# than max_reviews (national brands with in-house teams). Businesses sharing a website
+# with another result (chain branches like "Livspace, Kharadi") are skipped too.
+min_reviews: 20
+max_reviews: 3000
+# Only email businesses scoring at least this many points (see README).
+min_score: 3
+# Most businesses per email.
+max_per_email: 25

@@ -36,6 +36,9 @@ export function buildMatcher(filters: Filters) {
   const regions = anyOf(filters.locations.remote_regions);
   const loc = filters.locations;
   const maxAgeMs = filters.max_age_days * 86_400_000;
+  const freelanceMarker = anyOf(filters.freelance?.markers ?? []);
+  const freelanceSkill = anyOf(filters.freelance?.skills ?? []);
+  const freelanceExclude = anyOf(filters.freelance?.exclude_title ?? []);
 
   return function match(job: Job, now = Date.now()): MatchedJob | null {
     const title = normalize(job.title);
@@ -45,6 +48,11 @@ export function buildMatcher(filters: Filters) {
     if (maxAgeMs) {
       const posted = job.postedAt ? Date.parse(job.postedAt) : NaN;
       if (Number.isNaN(posted) ? !filters.keep_undated : now - posted > maxAgeMs) return null;
+    }
+
+    // Freelance and fractional roles skip the title, seniority, location and experience rules.
+    if (freelanceMarker?.test(title) && freelanceSkill?.test(title) && !freelanceExclude?.test(title)) {
+      return { ...job, locationMissing: !location.trim(), freelance: true };
     }
 
     const titleOk = titles?.test(title) || combos.some((groups) => groups.every((g) => g.test(title)));

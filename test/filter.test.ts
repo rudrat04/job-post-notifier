@@ -148,3 +148,37 @@ describe("recency", () => {
     expect(match(job("Chief of Staff", "Mumbai"), now)).not.toBeNull();
   });
 });
+
+describe("freelance roles", () => {
+  it.each([
+    ["Fractional Head of Growth", "Remote - US"],
+    ["Freelance GTM Engineer", "London, UK"],
+    ["Contract RevOps Consultant (6 months)", ""],
+    ["Part-time HubSpot Admin", "Remote"],
+    ["Fractional CMO / GTM Lead", "New York"],
+    ["AI Automation Consultant (Contract)", "Remote, Europe"],
+    ["Fractional Head of Revenue", "Remote"],
+    ["Freelance Growth Marketer", "Remote"],
+    ["Freelance AI Trainer", "Remote"],
+    ["Freelance AI Evaluator", "Remote"],
+    ["Part-time Content Writer (AI)", "Remote"],
+  ])("keeps %s anywhere and tags it", (title, location) => {
+    expect(match(job(title, location))).toMatchObject({ freelance: true });
+  });
+
+  it.each([
+    ["Contract Software Developer", "Remote"],
+    ["Freelance Sales Executive", "Mumbai"],
+    ["Part-time Data Entry", "Remote"],
+    ["Freelance Video Editor", "Remote"],
+    ["Senior GTM Consultant", "Waltham, Massachusetts, United States"],
+    ["Contract AI Data Annotation Specialist", "Remote"],
+    ["Part-time Revenue Cycle Specialist", "Remote"],
+  ])("drops %s", (title, location) => {
+    expect(match(job(title, location))).toBeNull();
+  });
+
+  it("leaves ordinary roles in the jobs list", () => {
+    expect(match(job("RevOps Manager", "Mumbai"))?.freelance).toBeFalsy();
+  });
+});

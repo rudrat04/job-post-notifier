@@ -31,7 +31,30 @@ With `onboarding@resend.dev` as the sender, Resend only delivers to the address 
 
 The same role found on several sites is emailed once, matched on company and title.
 
+Freelance, contract and fractional roles (a title with a word like "fractional", "contract" or "freelance" plus a GTM, RevOps, CRM or automation word, set under `freelance:` in `config/filters.yaml`) are listed in their own section at the top of the email. They skip the location, seniority and experience rules, since that work is usually remote.
+
 For employers' own boards, `npm run discover` reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes.
+
+## Freelance leads
+`npm run leads` finds people and companies asking for a freelance or fractional GTM engineer or automation builder, and emails them separately from the job digest. Everything is set in `config/leads.yaml`.
+- **n8n and Make forums**: new posts in the n8n community's Jobs section and Make's Hire a Pro section. No key needed.
+- **Reddit**: one search across GTM, sales, e-commerce and automation subreddits. Without a key it uses the public feed, which Reddit often blocks from GitHub's servers; a free Reddit "script" app (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`) makes it reliable.
+- **Hacker News** posts and comments, through the free Algolia search.
+- **LinkedIn and Reddit posts via Google** (Serper, `SERPER_API_KEY`, with SerpApi's `SERPAPI_KEY` as a fallback): 6 searches a run. Skipped without a key.
+- **Newly funded Indian startups and D2C brands** from Google News, which will need GTM and automation soon.
+
+A post counts only when it asks for help with a service in the list, and adverts, people offering their own services and full-time job posts are dropped. `npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` is meant to be started daily by cron-job.org. Sent leads are remembered in the `seen_leads` table (`supabase/migrations/004_seen_leads.sql`).
+
+## Google Maps prospects
+`npm run prospects` finds B2B, D2C and SME businesses on Google Maps that look like they need GTM or automation help, and emails a ranked list once a week. Everything is set in `config/prospects.yaml`. Nothing is sent to the businesses: reach out by hand.
+- Each run searches "<business type> in <city>" (Places API (New) Text Search, one page of up to 20 per request), rotating weekly through every type × city pair.
+- Each business's home page is fetched once (free) to see what it runs: a Shopify or WooCommerce store, email/SMS marketing tools, WhatsApp, a CRM, chat, booking and ad pixels. Up to 5 recent reviews are checked for complaints about slow replies.
+- Points: review complaints (2 each, up to 4), a store with no email/SMS tool (3), a plain contact form with no CRM, chat or booking (2, or 1 if a tag manager could be hiding tools), no website despite 50+ reviews (2), ads with no CRM (1), a store with no WhatsApp (1), a dead website (1), 100+ reviews (1). Businesses scoring 3 or more are emailed, best first, with a suggested pitch.
+- Chains (several results sharing one website) and businesses with under 20 or over 3,000 reviews are skipped.
+
+**Staying in Google's free tier.** Asking for website, rating and reviews puts each request in the "Text Search Enterprise + Atmosphere" SKU, which has 1,000 free requests a month. Every request is counted in the `maps_usage` table before it is sent, and a run stops at 40 requests or at 200 for the month, whichever comes first. Failed requests are not retried and no second pages are fetched. Only Google place IDs are stored (`seen_places`), as Google's terms allow; names, addresses and reviews are not kept. Tables: `supabase/migrations/005_prospects.sql`.
+
+`npm run prospects:dry-run` prints without emailing, but its requests still count. The workflow `prospects.yml` is meant to be started weekly by cron-job.org.
 
 ## Free events
 `npm run events` finds free tech, product and marketing events with registration still open and emails them. It sends nothing when there is no new event. Everything is set in `config/events.yaml`.

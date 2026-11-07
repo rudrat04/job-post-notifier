@@ -141,3 +141,65 @@ locations:
   remote_anywhere: true
   # Keep jobs with no location listed; they're flagged in the email.
   keep_missing: true
+
+# Freelance, contract and fractional roles, listed in their own section of the email.
+# A title needs a word from `markers` AND one from `skills`. These skip the location,
+# seniority and experience rules above (the work is usually remote, and fractional
+# roles are senior by nature), but still have to be recent.
+freelance:
+  markers:
+    - fractional
+    - freelancer?
+    - contract(?:or|ual)?
+    - part[- ]time
+    - interim
+    - project[- ]based
+    # "consultant" alone is left out: most consultant titles are full-time jobs.
+  skills:
+    - gtm
+    - go[- ]to[- ]market
+    - rev ?ops
+    - revenue (?:operations|ops|growth|strategy|engine|systems)
+    - head of revenue
+    - growth
+    - sales (?:operations|ops|enablement|systems|process(?:es)?|automation)
+    - marketing (?:operations|ops|automation)
+    - product marketing
+    - crm
+    - hubspot
+    - salesforce
+    - clay
+    - outbound
+    - lead gen(?:eration)?
+    - demand gen(?:eration)?
+    - automation
+    - workflow
+    - n8n
+    - zapier
+    - make\.com
+    # "AI" alone also matches data-labelling gigs, so it needs a second word.
+    - ai (?:automation|agents?|workflows?|ops|operations|solutions?|implementation|integration|engineer|builder|strategy|gtm|trainers?|training|evaluators?|writers?|writing)
+    - trainers?
+    - evaluators?
+    - writers?
+    - chief of staff
+    - business operations
+  exclude_title:
+    - intern(?:ship)?
+    - software
+    - developer
+    - data (?:engineer|scientist|entry)
+    - recruit(?:er|ing|ment)?
+    - accountant
+    - finance
+    - legal
+    - nurse
+    - teacher
+    - tutor
+    - (?:sales|business development) (?:executive|representative|rep|associate)
+    - telecaller
+    - customer support
+    # data-labelling gigs (AI trainer, evaluator and writer roles are kept)
+    - annotat\w*
+    - label(?:l)?(?:ing|er)
+    - transcri\w*

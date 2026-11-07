@@ -54,6 +54,18 @@ const filtersSchema = z
     /** Keep jobs that have no location listed (they are flagged in the email). */
     keep_missing: z.boolean().default(true),
   }),
+  /**
+   * Freelance, contract and fractional roles. A title needs a word from `markers` and
+   * one from `skills`. These skip the location and experience filters (the work is
+   * usually remote, and fractional roles are senior by nature) but not the age filter.
+   */
+  freelance: z
+    .object({
+      markers: z.array(z.string()).min(1),
+      skills: z.array(z.string()).min(1),
+      exclude_title: z.array(z.string()).default([]),
+    })
+    .optional(),
  })
   .refine((f) => f.titles.length > 0 || f.title_combos.length > 0, {
     message: "Set at least one of titles or title_combos",

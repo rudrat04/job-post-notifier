@@ -29,27 +29,48 @@ function failureNote(failures: SourceFailure[]): string {
   return `Couldn't check: ${shown.join("; ")}${more > 0 ? ` and ${more} more` : ""}`;
 }
 
+function renderHtml(groups: Map<string, MatchedJob[]>): string {
+  return [...groups]
+    .map(
+      ([company, list]) => `<h3 style="margin:20px 0 6px;font-size:15px">${esc(company)}</h3>
+<table style="border-collapse:collapse;width:100%">${list
+        .map(
+          (j) => `<tr><td style="padding:6px 0;border-bottom:1px solid #eee">
+<a href="${esc(j.url)}" style="color:#0b57d0;font-weight:600;text-decoration:none">${esc(j.title)}</a><br>
+<span style="color:#555;font-size:13px">${esc(j.location || "Location not listed")}${j.locationMissing ? " ⚠️" : ""}${
+            formatDate(j.postedAt) ? ` · posted ${formatDate(j.postedAt)}` : ""
+          }</span></td></tr>`,
+        )
+        .join("")}</table>`,
+    )
+    .join("\n");
+}
+
+function renderText(groups: Map<string, MatchedJob[]>): string[] {
+  return [...groups].flatMap(([company, list]) => [
+    company,
+    ...list.map(
+      (j) =>
+        `  • ${j.title} — ${j.location || "location not listed"}${formatDate(j.postedAt) ? ` (posted ${formatDate(j.postedAt)})` : ""}\n    ${j.url}`,
+    ),
+    "",
+  ]);
+}
+
+const FREELANCE_HEADING = "Freelance, contract & fractional";
+
 export function buildDigest(jobs: MatchedJob[], failures: SourceFailure[], now = new Date()) {
   const when = now.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", hour12: true, timeZone: TZ });
   const subject = `${jobs.length} new role${jobs.length === 1 ? "" : "s"} — ${when.replace(/,/, "")}`;
-  const groups = groupByCompany(jobs);
+  const freelance = groupByCompany(jobs.filter((j) => j.freelance));
+  const groups = groupByCompany(jobs.filter((j) => !j.freelance));
+  const section = (title: string) =>
+    `<h2 style="margin:28px 0 4px;font-size:17px;border-bottom:2px solid #1a1a1a;padding-bottom:4px">${esc(title)}</h2>`;
 
   const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;max-width:640px;margin:0 auto;padding:16px">
 <h2 style="margin:0 0 16px">${esc(subject)}</h2>
-${[...groups]
-  .map(
-    ([company, list]) => `<h3 style="margin:20px 0 6px;font-size:15px">${esc(company)}</h3>
-<table style="border-collapse:collapse;width:100%">${list
-      .map(
-        (j) => `<tr><td style="padding:6px 0;border-bottom:1px solid #eee">
-<a href="${esc(j.url)}" style="color:#0b57d0;font-weight:600;text-decoration:none">${esc(j.title)}</a><br>
-<span style="color:#555;font-size:13px">${esc(j.location || "Location not listed")}${j.locationMissing ? " ⚠️" : ""}${
-          formatDate(j.postedAt) ? ` · posted ${formatDate(j.postedAt)}` : ""
-        }</span></td></tr>`,
-      )
-      .join("")}</table>`,
-  )
-  .join("\n")}
+${freelance.size ? `${section(FREELANCE_HEADING)}\n${renderHtml(freelance)}\n${groups.size ? section("Jobs") : ""}` : ""}
+${renderHtml(groups)}
 ${
   failures.length
     ? `<p style="margin-top:24px;color:#888;font-size:12px">${esc(failureNote(failures))}</p>`
@@ -60,14 +81,8 @@ ${
   const text = [
     subject,
     "",
-    ...[...groups].flatMap(([company, list]) => [
-      company,
-      ...list.map(
-        (j) =>
-          `  • ${j.title} — ${j.location || "location not listed"}${formatDate(j.postedAt) ? ` (posted ${formatDate(j.postedAt)})` : ""}\n    ${j.url}`,
-      ),
-      "",
-    ]),
+    ...(freelance.size ? [`== ${FREELANCE_HEADING} ==`, "", ...renderText(freelance), ...(groups.size ? ["== Jobs ==", ""] : [])] : []),
+    ...renderText(groups),
     ...(failures.length ? [failureNote(failures)] : []),
   ].join("\n");
 

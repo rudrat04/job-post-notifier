@@ -43,3 +43,20 @@ describe("mergeDuplicates", () => {
     expect(merged[0].location).toBe("Mumbai");
   });
 });
+
+describe("digest sections", async () => {
+  const { buildDigest } = await import("../src/email");
+  it("lists freelance roles in their own section first", () => {
+    const base = { externalId: "x", remote: false, url: "https://e.x", source: "lever" as const, locationMissing: false };
+    const { text } = buildDigest(
+      [
+        { ...base, id: "1", company: "Acme", title: "RevOps Manager", location: "Mumbai" },
+        { ...base, id: "2", company: "Beta", title: "Fractional GTM Lead", location: "Remote", freelance: true },
+      ],
+      [],
+    );
+    expect(text.indexOf("Freelance, contract & fractional")).toBeLessThan(text.indexOf("Fractional GTM Lead"));
+    expect(text.indexOf("Fractional GTM Lead")).toBeLessThan(text.indexOf("== Jobs =="));
+    expect(text.indexOf("== Jobs ==")).toBeLessThan(text.indexOf("RevOps Manager"));
+  });
+});

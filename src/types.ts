@@ -33,6 +33,8 @@ export interface Job {
 export interface MatchedJob extends Job {
   /** The posting had no location, so the location filter could not be applied. */
   locationMissing: boolean;
+  /** A freelance, contract or fractional role, listed in its own section. */
+  freelance?: boolean;
 }
 
 export interface SourceFailure {
