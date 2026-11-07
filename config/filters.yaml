@@ -42,6 +42,9 @@ title_combos:
   # CRM / outbound tooling owners
   - - [hubspot, salesforce, crm, outbound, apollo, clay]
     - [manager, specialist, lead, architect, owner, consultant, associate, analyst]
+  # consultants: "Marketing Consultant", "GTM Consultant", "AI Automation Consultant"
+  - - [marketing, gtm, "go[- ]to[- ]market", ai, workflow, automation]
+    - [consultants?]
 
 # Drop a job if its title matches any of these.
 exclude_title:
@@ -125,6 +128,9 @@ locations:
     - bangalore
     - bengalooru
     - pune
+    - ahmedabad
+    - amdavad
+    - gandhinagar
   # Remote jobs limited to these regions are kept.
   remote_regions:
     - india

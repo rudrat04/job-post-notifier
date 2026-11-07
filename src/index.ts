@@ -50,7 +50,7 @@ async function main() {
 
   const jobspyBin = search?.jobspy ? await findJobspy() : null;
   const { tasks, skipped } = search
-    ? planSearches(search, filters.max_age_days, process.env, jobspyBin)
+    ? planSearches(search, filters.max_age_days, process.env, jobspyBin, { jsearch: !dryRun && !bootstrap })
     : { tasks: [], skipped: [] };
   for (const name of skipped) console.warn(`Skipping ${name}`);
 

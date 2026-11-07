@@ -20,22 +20,19 @@ queries:
   - founder's associate
   - hubspot
   - crm
+  - marketing consultant
+  - gtm consultant
+  - ai consultant
+  - automation consultant
 
 # Free, no key. Covers every company hiring through Workable.
 workable:
   locations: [India]
 
-# Free key from developer.adzuna.com → ADZUNA_APP_ID, ADZUNA_APP_KEY.
-# Aggregates many Indian job sites. "India" catches remote roles.
-adzuna:
-  where: [Mumbai, Bengaluru, Pune, India]
-
-# Free key from jooble.org/api/about → JOOBLE_API_KEY.
-jooble:
-  where: [Mumbai, Bengaluru, Pune, India]
-
-# RapidAPI key (JSearch) → RAPIDAPI_KEY. The free tier is ~200 requests a month,
-# so only a few high-value queries, capped per run (2 runs a day × 3 ≈ 180/month).
+# RapidAPI key (JSearch) → RAPIDAPI_KEY. The Basic plan allows 200 requests a month.
+# Each run uses at most max_requests (2 runs a day × 31 days × 3 = 186/month) and
+# rotates through the query × place pairs below, so every pair gets its turn.
+# Dry runs and bootstrap runs skip JSearch, and failed requests are not retried.
 jsearch:
   queries:
     - gtm engineer
@@ -43,6 +40,8 @@ jsearch:
     - chief of staff
     - founders office
     - product marketing
+    - gtm consultant
+    - automation consultant
   where: [India]
   max_requests: 3
 
@@ -61,6 +60,6 @@ jobspy:
     - product marketing
     - chief of staff
     - founders office
-  where: [Mumbai, Bengaluru, Pune]
+  where: [Mumbai, Bengaluru, Pune, Ahmedabad, Gandhinagar]
   remote_india: true
   results_per_site: 20

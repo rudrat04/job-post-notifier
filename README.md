@@ -25,7 +25,7 @@ With `onboarding@resend.dev` as the sender, Resend only delivers to the address 
 ## Finding jobs without a company list
 `config/search.yaml` holds the role keywords, which are searched across job sites:
 - **Workable** covers every company hiring through Workable. It needs no key.
-- **Adzuna** (`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`), **Jooble** (`JOOBLE_API_KEY`) and **JSearch** (`RAPIDAPI_KEY`) are aggregators. Add the free keys to `.env` and to the GitHub secrets. A source without its key is skipped with a note in the log.
+- **JSearch** (`RAPIDAPI_KEY`) is an aggregator on RapidAPI. Add the key to `.env` and to the GitHub secrets; without it the source is skipped with a note in the log. The Basic plan allows 200 requests a month, so each run makes at most 3 and rotates through the JSearch queries. Dry runs skip it.
 
 - **JobSpy** scrapes LinkedIn, Naukri and Indeed through the open-source [JobSpy](https://github.com/speedyapply/JobSpy) CLI, pinned to 1.4.0. Locally, install it with `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`. These sites forbid scraping and may block GitHub's servers; a blocked site is listed under "couldn't check" and the rest of the run carries on.
 

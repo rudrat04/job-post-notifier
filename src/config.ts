@@ -59,16 +59,11 @@ const filtersSchema = z
     message: "Set at least one of titles or title_combos",
   });
 
-const whereList = z.object({ where: z.array(z.string()).min(1) });
 
 const searchSchema = z.object({
   /** Keywords sent to every search source. */
   queries: z.array(z.string()).min(1),
   workable: z.object({ locations: z.array(z.string()).min(1) }).optional(),
-  /** Needs ADZUNA_APP_ID and ADZUNA_APP_KEY; skipped if they are missing. */
-  adzuna: whereList.optional(),
-  /** Needs JOOBLE_API_KEY. */
-  jooble: whereList.optional(),
   /** Scrapes LinkedIn, Naukri and Indeed via the JobSpy CLI; skipped if it isn't installed. */
   jobspy: z
     .object({

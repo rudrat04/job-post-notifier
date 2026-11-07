@@ -29,7 +29,7 @@ describe("contentId", () => {
 describe("mergeDuplicates", () => {
   it("joins locations and prefers the employer's own link over an aggregator's", () => {
     const merged = mergeDuplicates([
-      job({ source: "adzuna", url: "https://adzuna/x", location: "Mumbai" }),
+      job({ source: "jsearch", url: "https://jsearch/x", location: "Mumbai" }),
       job({ source: "lever", url: "https://lever/x", location: "Bengaluru" }),
     ]);
     expect(merged).toHaveLength(1);

@@ -1,5 +1,5 @@
 import { contentId } from "../dedupe";
-import { getJson, htmlToText } from "../http";
+import { htmlToText, request } from "../http";
 import type { Job, Source } from "../types";
 
 const REMOTE = /\b(?:remote|work from home|work-from-home|wfh)\b/i;
@@ -35,87 +35,6 @@ function toJob(source: Source, r: Raw): Job {
   };
 }
 
-// ---------------------------------------------------------------- Adzuna
-interface AdzunaResponse {
-  results?: {
-    id: string | number;
-    title: string;
-    description?: string;
-    created?: string;
-    redirect_url: string;
-    company?: { display_name?: string };
-    location?: { display_name?: string };
-  }[];
-}
-
-export async function searchAdzuna(
-  creds: { appId: string; appKey: string },
-  query: string,
-  where: string,
-  dayRange: number,
-): Promise<Job[]> {
-  const params = new URLSearchParams({
-    app_id: creds.appId,
-    app_key: creds.appKey,
-    what: query,
-    where,
-    results_per_page: "50",
-    sort_by: "date",
-  });
-  if (dayRange > 0) params.set("max_days_old", String(Math.ceil(dayRange)));
-  const data = await getJson<AdzunaResponse>(`https://api.adzuna.com/v1/api/jobs/in/search/1?${params}`);
-  return (data.results ?? []).map((r) =>
-    toJob("adzuna", {
-      externalId: String(r.id),
-      company: r.company?.display_name,
-      title: r.title,
-      location: r.location?.display_name,
-      url: r.redirect_url,
-      postedAt: r.created,
-      description: r.description,
-    }),
-  );
-}
-
-// ---------------------------------------------------------------- Jooble
-interface JoobleResponse {
-  jobs?: {
-    id?: string | number;
-    title: string;
-    location?: string;
-    snippet?: string;
-    link: string;
-    company?: string;
-    updated?: string;
-  }[];
-}
-
-export async function searchJooble(
-  apiKey: string,
-  query: string,
-  where: string,
-  dayRange: number,
-): Promise<Job[]> {
-  const body: Record<string, string> = { keywords: query, location: where, page: "1" };
-  if (dayRange > 0) body.datecreatedfrom = new Date(Date.now() - dayRange * 86_400_000).toISOString().slice(0, 10);
-  const data = await getJson<JoobleResponse>(`https://jooble.org/api/${encodeURIComponent(apiKey)}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return (data.jobs ?? []).map((r) =>
-    toJob("jooble", {
-      externalId: String(r.id ?? r.link),
-      company: r.company,
-      title: r.title,
-      location: r.location,
-      url: r.link,
-      postedAt: r.updated,
-      description: r.snippet,
-    }),
-  );
-}
-
 // ---------------------------------------------------------------- JSearch (RapidAPI)
 interface JSearchResponse {
   data?: {
@@ -145,9 +64,13 @@ export async function searchJSearch(
     country: "in",
     date_posted: dayRange <= 1 ? "today" : dayRange <= 3 ? "3days" : "week",
   });
-  const data = await getJson<JSearchResponse>(`https://jsearch.p.rapidapi.com/search?${params}`, {
-    headers: { "x-rapidapi-key": apiKey, "x-rapidapi-host": "jsearch.p.rapidapi.com" },
-  });
+  // No retries: every attempt counts against the monthly quota.
+  const res = await request(
+    `https://jsearch.p.rapidapi.com/search?${params}`,
+    { headers: { "x-rapidapi-key": apiKey, "x-rapidapi-host": "jsearch.p.rapidapi.com" } },
+    0,
+  );
+  const data = (await res.json()) as JSearchResponse;
   return (data.data ?? []).map((r) =>
     toJob("jsearch", {
       externalId: r.job_id,
