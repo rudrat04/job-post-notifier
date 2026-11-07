@@ -21,7 +21,13 @@ export function readSite(html: string): SiteFacts {
   const h = html.toLowerCase();
   return {
     reachable: true,
-    store: has(h, /cdn\.shopify\.com|myshopify\.com/) ? "shopify" : has(h, /woocommerce/) ? "woocommerce" : undefined,
+    // Many WordPress sites load the WooCommerce plugin without selling anything, so a
+    // WooCommerce store also needs a sign of real products: cart links or product pages.
+    store: has(h, /cdn\.shopify\.com|myshopify\.com/)
+      ? "shopify"
+      : has(h, /woocommerce/) && has(h, /add[-_]to[-_]cart|\/product\/|\/products\/|\/shop\/?["']/)
+        ? "woocommerce"
+        : undefined,
     emailSms: has(h, /klaviyo|mailchimp|omnisend|moengage|webengage|clevertap|netcore|privy|attentive|mailmodo|sendinblue|brevo/),
     whatsapp: has(h, /wa\.me\/|api\.whatsapp\.com|wati\.io|interakt|gallabox|aisensy|gupshup|whatsapp-widget/),
     crm: has(h, /hs-scripts\.com|hs-analytics|hubspot|zoho(?:salesiq|crm|public)|salesiq\.zoho|salesforce|pardot|freshsales|freshworks|leadsquared|pipedrive|activecampaign|bitrix24/),
@@ -74,7 +80,7 @@ export function scoreProspect(place: Place, site: SiteFacts | null): Prospect {
   if (complaints) {
     add(
       Math.min(4, complaints * 2),
-      `${complaints} recent review${complaints > 1 ? "s" : ""} complain about slow or no response`,
+      `${complaints} recent review${complaints > 1 ? "s complain" : " complains"} about slow or no response`,
       "Lead follow-up: instant WhatsApp/email replies and a CRM pipeline so no enquiry is missed",
     );
   }
@@ -87,7 +93,7 @@ export function scoreProspect(place: Place, site: SiteFacts | null): Prospect {
     add(1, "Website didn't load", "Fix the broken website and capture enquiries properly");
   } else if (site) {
     if (site.store && !site.emailSms) {
-      add(3, `${site.store === "shopify" ? "Shopify" : "WooCommerce"} store with no email/SMS marketing tool`, "D2C retention: abandoned-cart, post-purchase and win-back flows");
+      add(3, `${site.store === "shopify" ? "Shopify" : "WooCommerce"} store with no email/SMS marketing tool`, "Online sales retention: abandoned-cart, post-purchase and win-back flows");
     }
     if (site.store && !site.whatsapp) add(1, "Store has no WhatsApp ordering or support", "WhatsApp commerce: order updates and support automation");
     if (site.adPixel && !site.crm) add(1, "Runs ads but no CRM on the site", "Ads are paid for, but leads aren't tracked: CRM and lead routing");

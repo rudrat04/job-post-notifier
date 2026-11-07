@@ -54,11 +54,17 @@ interface Result {
  * the post's own text so other people's requests don't make this post look like one.
  */
 export function ownText(snippet: string): string {
-  return snippet.split(/\s+[·•]\s+|\s+\|\s+\d+\s+(?:comments?|reactions?|likes?)\b/i)[0].trim();
+  // Reddit snippets also run on into the "related posts" sidebar, which shows up as vote
+  // and comment counts ("Paid work]. 47. 122. Looking for…") or a count before "...".
+  return snippet
+    .split(/\s+[·•]\s+|\s+\|\s+\d+\s+(?:comments?|reactions?|likes?)\b|\.\s+\d+\.\s+\d+\.|\s\d+\s+\.\.\.\s/i)[0]
+    .trim();
 }
 
 function leadFrom(platform: Platform, r: Result, now: number): Lead | null {
   if (!r.link || !r.title || !POST_URL[platform].test(r.link)) return null;
+  // LinkedIn post links carry the post's hashtags ("..._hiring-salesjobs-activity-…"), so job ads show in the URL.
+  if (platform === "linkedin" && /[_-](?:now)?hiring|jobs?[-_]|careers|internships?/i.test(r.link)) return null;
   const url = r.link.split("?")[0];
   const key = platform === "x" ? url.match(/status\/(\d+)/)![1] : url;
   return {

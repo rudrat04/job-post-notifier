@@ -67,6 +67,8 @@ describe("lead filter", () => {
     ["Need help: Zapier zap not triggering", ""],
     ["Help needed with HubSpot workflow enrollment", "Contacts are not enrolling"],
     ["Which automation tool should I use?", "Need advice on Zapier vs Make"],
+    ["Looking to build a free AI automation for a few businesses", ""],
+    ["Foundry's Post", "We're hiring across our global teams, with opportunities in sales, RevOps and more. Looking for RevOps leaders"],
   ])("drops %s", (title, text) => {
     expect(match(lead(title, text))).toBe(false);
   });
@@ -112,6 +114,7 @@ describe("lead filter", () => {
     ["Automate your workflow with an AI specialist", ""],
     ["FREE Help for Make.com Users Facing Errors, Broken Scenarios", ""],
     ["Need help with a Make scenario or workflow automation?", "I can help you build and fix scenarios. Message me."],
+    ["When does it actually make sense to put an AI agent on top of your Make scenarios?", "A lot of people assume adding AI to their automations will fix everything"],
     ["Looking for White-Label Make.com Automation Developers (Agency Partner)", ""],
     ["Weekly community call", "Talk about n8n with the team"],
   ])("drops forum post %s", (title, text) => {
@@ -212,6 +215,12 @@ describe("web search", () => {
     const { ownText } = await import("../src/leads/sources/websearch");
     expect(ownText("hey does anyone know the cost for a 4 page site? · I need a website developer ...")).toBe("hey does anyone know the cost for a 4 page site?");
     expect(ownText("Looking for a creative web designer. Please reach out | 119 comments on LinkedIn.")).toBe("Looking for a creative web designer. Please reach out");
+    expect(ownText("Looking to build a free AI automation. Looking for Ai automation consultants [Paid work]. 47. 122. Looking for an AI")).toBe(
+      "Looking to build a free AI automation. Looking for Ai automation consultants [Paid work]",
+    );
+    expect(ownText("What does your stack look like? When does a startup need a CTO? 4 ... Looking for a full-stack developer")).toBe(
+      "What does your stack look like? When does a startup need a CTO?",
+    );
     expect(ownText("Plain text with no markers")).toBe("Plain text with no markers");
   });
 
@@ -232,6 +241,20 @@ describe("web search", () => {
     expect(parseResultDate("Oct 26, 2026", now)).toMatch(/^2026-10-2[56]/);
     expect(parseResultDate(undefined, now)).toBeUndefined();
     expect(parseResultDate("whenever", now)).toBeUndefined();
+  });
+
+  it("drops LinkedIn posts whose link shows they are job ads", async () => {
+    const { searchWeb } = await import("../src/leads/sources/websearch");
+    const post = (slug: string) => ({ title: "Post", link: `https://www.linkedin.com/posts/${slug}-activity-1`, snippet: "Looking for a HubSpot consultant" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ organic: [post("acme_hiring-businessdevelopment-salesjobs"), post("jane_need-a-hubspot-consultant")] })),
+      ),
+    );
+    const leads = await searchWeb("linkedin", "q", 1, 10, { SERPER_API_KEY: "k" });
+    vi.unstubAllGlobals();
+    expect(leads.map((l) => l.url)).toEqual(["https://www.linkedin.com/posts/jane_need-a-hubspot-consultant-activity-1"]);
   });
 
   it("keeps real posts, drops profile and wiki pages, and reuses the Reddit RSS id", async () => {

@@ -102,7 +102,8 @@ exclude:
   - my services
   - dm me
   - open to work
-  - free (?:audit|consult|consultation|help|trial|research|workflows?|templates?)
+  - free (?:audit|consult|consultation|help|trial|research|workflows?|templates?|ai|automations?)
+  - looking to build
   - show hn
   - co-?founder
   - early users
@@ -131,7 +132,7 @@ exclude:
 # prices, and end with "DM me" or "comment X below".
 exclude_text:
   # talking to the reader
-  - \byour (?:business|brand|startup|company|store|shop|agency|team|workflows?|process(?:es)?|operations|sales|crm|leads|automations?|scenarios?|stack|tools?)\b
+  - \byour (?:\w+ )?(?:business|brand|startup|company|store|shop|agency|team|workflows?|process(?:es)?|operations|sales|crm|leads|automations?|scenarios?|stack|tools?)\b
   - i can (?:help|build|set up|fix|automate)
   - let'?s turn your
   - interested\?
@@ -164,7 +165,7 @@ exclude_text:
   - (?:great|exciting) opportunity to join
   - to join (?:the|our) [\w ]{0,30}team
   - build (?:&|and) sell
-  - (?:they|he|she)(?:'re| are| is) hiring
+  - (?:they|he|she|we)(?:'re| are| is) hiring
   - ask(?:s|ed)? me
   - do(?:es)? (?:i|you|my|your) (?:really )?need
   - interns?(?:hips?)?

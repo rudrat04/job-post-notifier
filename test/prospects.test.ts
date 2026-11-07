@@ -95,6 +95,11 @@ describe("scoring", () => {
     expect(readSite(`<script src="//js.hs-scripts.com/1.js"></script><a href="https://calendly.com/x">`)).toMatchObject({ crm: true, booking: true });
   });
 
+  it("doesn't call a WordPress site a store just because WooCommerce is loaded", () => {
+    expect(readSite(`<link href="/wp-content/plugins/woocommerce/style.css">`).store).toBeUndefined();
+    expect(readSite(`<script src="/wp-content/plugins/woocommerce/x.js"></script><a href="/product/blue-shirt">`).store).toBe("woocommerce");
+  });
+
   it("ranks a Shopify store with no email tool highly", () => {
     const p = scoreProspect(place(), site({ store: "shopify", whatsapp: true }));
     expect(p.score).toBeGreaterThanOrEqual(3);
