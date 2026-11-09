@@ -37,6 +37,13 @@ function toJob(source: Source, r: Raw): Job {
 
 // ---------------------------------------------------------------- JSearch (RapidAPI)
 interface JSearchResponse {
+  /** /search-v2 nests the jobs: { data: { jobs: [...], cursor } }. */
+  data?: { jobs?: JSearchJob[] };
+}
+
+type JSearchJob = NonNullable<LegacyJSearchResponse["data"]>[number];
+
+interface LegacyJSearchResponse {
   data?: {
     job_id: string;
     job_title: string;
@@ -48,8 +55,14 @@ interface JSearchResponse {
     job_description?: string;
     job_apply_link: string;
     job_posted_at_datetime_utc?: string;
+    job_location?: string;
   }[];
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** JSearch answers 429 to parallel requests, so they go out one at a time, spaced apart. */
+let jsearchQueue: Promise<unknown> = Promise.resolve();
+const JSEARCH_GAP_MS = 1500;
 
 export async function searchJSearch(
   apiKey: string,
@@ -59,24 +72,26 @@ export async function searchJSearch(
 ): Promise<Job[]> {
   const params = new URLSearchParams({
     query: `${query} in ${where}`,
-    page: "1",
     num_pages: "1",
     country: "in",
     date_posted: dayRange <= 1 ? "today" : dayRange <= 3 ? "3days" : "week",
   });
   // No retries: every attempt counts against the monthly quota.
-  const res = await request(
-    `https://jsearch.p.rapidapi.com/search?${params}`,
-    { headers: { "x-rapidapi-key": apiKey, "x-rapidapi-host": "jsearch.p.rapidapi.com" } },
-    0,
+  const call = jsearchQueue.then(() =>
+    request(
+      `https://jsearch.p.rapidapi.com/search-v2?${params}`,
+      { headers: { "x-rapidapi-key": apiKey, "x-rapidapi-host": "jsearch.p.rapidapi.com" } },
+      0,
+    ),
   );
-  const data = (await res.json()) as JSearchResponse;
-  return (data.data ?? []).map((r) =>
+  jsearchQueue = call.catch(() => {}).then(() => sleep(JSEARCH_GAP_MS));
+  const data = (await (await call).json()) as JSearchResponse;
+  return (data.data?.jobs ?? []).map((r) =>
     toJob("jsearch", {
       externalId: r.job_id,
       company: r.employer_name,
       title: r.job_title,
-      location: [r.job_city, r.job_state, r.job_country].filter(Boolean).join(", "),
+      location: [r.job_city, r.job_state, r.job_country].filter(Boolean).join(", ") || r.job_location,
       url: r.job_apply_link,
       postedAt: r.job_posted_at_datetime_utc,
       description: r.job_description,

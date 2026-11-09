@@ -45,8 +45,8 @@ describe("aggregator adapters", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("maps JSearch results", async () => {
-    mockFetch({
-      data: [
+    const fn = mockFetch({
+      data: { jobs: [
         {
           job_id: "abc",
           job_title: "Chief of Staff",
@@ -59,10 +59,11 @@ describe("aggregator adapters", () => {
           job_apply_link: "https://gamma.example/apply",
           job_posted_at_datetime_utc: "2026-10-21T05:00:00Z",
         },
-      ],
+      ] },
     });
     const [j] = await searchJSearch("key", "chief of staff", "India", 2);
     expect(j).toMatchObject({ company: "Gamma", location: "Bengaluru, Karnataka, IN", remote: false, source: "jsearch" });
+    expect(String((fn.mock.calls[0] as unknown[])[0])).toContain("jsearch.p.rapidapi.com/search-v2?");
   });
 
   it("returns nothing for an empty response", async () => {
