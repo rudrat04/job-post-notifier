@@ -1,6 +1,7 @@
 # Every entry is a case-insensitive regex fragment, matched as a whole word or phrase.
 # Tuned for ~2 years of experience: GTM engineering, GTM strategy, product marketing,
-# RevOps, sales-process/automation roles, chief of staff and founder's office.
+# RevOps, chief of staff, founder's office, strategy & ops and generalist roles.
+# Sales-floor operations (sales ops, enablement, process) are deliberately left out.
 
 # A job title matching ANY of these is kept.
 titles:
@@ -11,7 +12,27 @@ titles:
   - founder'?s'? associate
   - founding associate
   - associate to (?:the )?(?:founders?|ceo)
+  - ceo'?s'? office
+  - office of (?:the )?(?:md|managing director|chairman|co-?founders?|president)
+  - executive office
+  - entrepreneur in residence
+  - eir
   - special projects
+  # Strategy & ops
+  - biz ?ops
+  - strategy (?:&|and) planning
+  - (?:corporate|business|growth|gtm) strategy
+  - strategy (?:analyst|associate|manager)
+  # Generalist and 0-to-1
+  - generalist
+  - new initiatives
+  - zero[- ]to[- ]one
+  - 0 ?(?:to|-|→) ?1
+  - venture builder
+  - launch manager
+  - expansion (?:manager|associate|lead)
+  - city launch
+  - growth (?:associate|analyst)
   # GTM
   - gtm
   - go[- ]to[- ]market
@@ -21,7 +42,6 @@ titles:
   # Revenue / sales / marketing operations
   - rev ?ops
   - revenue (?:operations|ops)
-  - sales (?:operations|ops|enablement|systems|process(?:es)?|automation)
   - marketing (?:operations|ops|automation)
   - business (?:operations|ops)
   - strategy (?:&|and) operations
@@ -31,10 +51,10 @@ titles:
 # in any order ("Growth Operations Manager", "Operations Manager, Revenue").
 title_combos:
   # revenue/sales/marketing/growth + operations-style word
-  - - [revenue, sales, marketing, growth, gtm, crm, hubspot, salesforce, outbound, lead gen(?:eration)?, demand gen(?:eration)?]
+  - - [revenue, marketing, growth, gtm, crm, hubspot, salesforce, outbound, lead gen(?:eration)?, demand gen(?:eration)?]
     - [operations, ops, systems, architect, automation, enablement, process(?:es)?, infrastructure]
   # builder-style GTM roles: "Growth Engineer", "Marketing Engineer", "Automation Engineer"
-  - - [growth, revenue, marketing, sales, automation, workflow, crm, no.?code, low.?code, clay]
+  - - [growth, revenue, marketing, automation, workflow, crm, no.?code, low.?code, clay]
     - [engineer]
   # strategy-flavoured business roles
   - - [strategy, strategic]
@@ -48,6 +68,12 @@ title_combos:
 
 # Drop a job if its title matches any of these.
 exclude_title:
+  # sales-floor operations
+  - sales (?:operations|ops|enablement|systems|process(?:es)?|automation)
+  # strategy titles that are really content or brand work
+  - (?:content|seo|brand|social media|media|creative|communications?|digital) strateg\w*
+  # generalists outside business roles
+  - (?:it|accounting|admin|office|legal|payroll) generalist
   - intern(?:ship)?
   - trainee
   - assistant
@@ -162,7 +188,6 @@ freelance:
     - revenue (?:operations|ops|growth|strategy|engine|systems)
     - head of revenue
     - growth
-    - sales (?:operations|ops|enablement|systems|process(?:es)?|automation)
     - marketing (?:operations|ops|automation)
     - product marketing
     - crm

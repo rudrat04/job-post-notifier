@@ -35,8 +35,6 @@ describe("titles", () => {
     "PMM, Growth",
     "Revenue Operations Analyst",
     "RevOps Manager",
-    "Sales Operations Associate",
-    "Sales Process Architect",
     "Operations Manager, Revenue",
     "Marketing Automation Specialist",
     "Marketing Operations Manager",
@@ -46,6 +44,20 @@ describe("titles", () => {
     "Strategy Associate",
     "HubSpot Specialist",
     "CRM Manager",
+    "CEO's Office Associate",
+    "Associate, Office of the MD",
+    "Entrepreneur in Residence",
+    "Deputy Chief of Staff",
+    "BizOps Analyst",
+    "Strategy & Planning Associate",
+    "Corporate Strategy Analyst",
+    "Business Strategy Associate",
+    "Strategy Manager",
+    "Business Generalist",
+    "Generalist - New Initiatives",
+    "0 to 1 Associate",
+    "Expansion Manager",
+    "Growth Associate",
   ])("keeps %s", (title) => {
     expect(match(job(title, "Mumbai"))).not.toBeNull();
   });
@@ -74,6 +86,15 @@ describe("titles", () => {
     "Engineer - Sales",
     "FP&A Manager – Revenue Operations",
     "Bangalore Career Fair - Sales Enablement Specialist",
+    "Sales Operations Associate",
+    "Sales Process Architect",
+    "Sales Enablement Manager",
+    "Sales Ops Analyst",
+    "Content Strategy Manager",
+    "Brand Strategy Associate",
+    "HR Generalist",
+    "IT Generalist",
+    "Executive Assistant to CEO",
   ])("drops %s", (title) => {
     expect(match(job(title, "Mumbai"))).toBeNull();
   });

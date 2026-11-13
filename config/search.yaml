@@ -6,9 +6,6 @@ queries:
   - gtm engineer
   - revenue operations
   - revops
-  - sales operations
-  - sales enablement
-  - sales process
   - marketing operations
   - marketing automation
   - product marketing
@@ -18,6 +15,13 @@ queries:
   - chief of staff
   - founders office
   - founder's associate
+  - ceo office
+  - bizops
+  - corporate strategy
+  - business strategy
+  - strategic initiatives
+  - generalist
+  - new initiatives
   - hubspot
   - crm
   - marketing consultant
@@ -58,7 +62,7 @@ jobspy:
     - gtm
     - gtm engineer
     - revenue operations
-    - sales operations
+    - strategy operations
     - marketing operations
     - product marketing
     - chief of staff
