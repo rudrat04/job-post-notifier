@@ -19,7 +19,9 @@
     "leads:bootstrap": "node --env-file-if-exists=.env --import tsx src/leads/index.ts --bootstrap",
     "prospects": "node --env-file-if-exists=.env --import tsx src/prospects/index.ts",
     "prospects:dry-run": "node --env-file-if-exists=.env --import tsx src/prospects/index.ts --dry-run",
-    "prospects:bootstrap": "node --env-file-if-exists=.env --import tsx src/prospects/index.ts --bootstrap"
+    "prospects:bootstrap": "node --env-file-if-exists=.env --import tsx src/prospects/index.ts --bootstrap",
+    "founders": "node --env-file-if-exists=.env --import tsx src/founders/index.ts",
+    "founders:dry-run": "node --env-file-if-exists=.env --import tsx src/founders/index.ts --dry-run"
   },
   "engines": {
     "node": ">=22"

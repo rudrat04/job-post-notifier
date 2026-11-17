@@ -1,0 +1,69 @@
+# Founders to cold DM: freshly funded Indian startups whose team shows no one in the roles
+# below on LinkedIn. Run with `npm run founders`; emailed separately from everything else.
+#
+# How it works: Google News funding stories give company names (free). For each company:
+#   1. Exa people search (EXA_API_KEY) finds the founders from LinkedIn work history.
+#   2. A second Exa search looks for anyone currently at the company in one of `roles`.
+#   3. If Exa finds no one, People Data Labs (PDL_API_KEY) gets asked too. That's free when
+#      PDL finds nobody, but its data lags LinkedIn by months, so it only ever adds "has role".
+# Without an Exa key, Google (Serper) does steps 1 and 2 instead. Companies with founders and
+# no one in the roles are emailed. "No one found" is a strong hint, not proof: glance at the
+# company's People tab before you DM.
+
+# Funding stories from Google News.
+news:
+  queries:
+    - India startup raises seed funding
+    - India startup raises pre-seed
+    - India startup raises Series A
+    - India SaaS startup raises funding
+    - India D2C brand raises funding
+    - India AI startup raises funding
+  # Look back this many days. Companies already checked are remembered, so overlap is free.
+  days: 7
+  # Headlines must match one of these to count as a funding round (regex, case-insensitive).
+  keywords: [rais, funding, seed, 'series [a-c]', pre-series]
+  # Headlines matching any of these are dropped: roundups and investors' own funds. Whole words.
+  exclude: [roundup, round-up, weekly, this week, funding wrap, fund, first close, venture capital firm, startups raised, startups raise]
+
+# The roles to look for. Each is matched loosely ("Founder's Office" also matches "Founders
+# Office" and "founder’s office"). Most important first: Google reads only about 32 words,
+# so the confirming Google search uses the first ones that fit; Exa and the matching use all.
+roles:
+  - Founder's Office
+  - Chief of Staff
+  - GTM Engineer
+  - Founder's Associate
+  - Product Marketing
+  - GTM Lead
+  - Head of GTM
+  - CEO's Office
+  - Go-to-Market Engineer
+  - GTM Engineering
+  - Founders Office
+  - Founders Associate
+  - Associate to the Founder
+  - Associate to Founder
+  - Founder/CEO Office
+  - Office of the CEO
+  - Product Marketing Manager
+  - Product Marketing Lead
+  - Head of Product Marketing
+
+# Founders listed per company (co-founders included; the CEO counts too).
+max_founders_per_company: 3
+
+# Companies checked per run; the rest wait for the next run.
+max_companies: 20
+
+# Searches per run, at most, by provider. About 2 per company.
+#   exa:    ~$0.007 each; the free tier's monthly credit covers well over 1,000.
+#   google: Serper: one search to confirm each company that looks like a gap (with an Exa
+#           key), or two per company without one. Its free 2,500 are a one-off allowance
+#           shared with the freelance leads.
+#   pdl:    free plan, about 100 a month, 10 a minute (the run waits between calls).
+# Dry runs spend searches too.
+limits:
+  exa: 45
+  google: 20
+  pdl: 20

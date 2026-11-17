@@ -6,14 +6,17 @@
 # remembered, so 2 days gives a safety margin without repeats.
 max_age_days: 2
 
-# For Reddit, Hacker News, forum, X and LinkedIn posts, a lead must ask for help close
-# to a service. Regex fragments, case-insensitive, whole words. A post counts when:
-#   (a) an asking verb is followed by a person within ~4 words ("looking for a GTM consultant")
+# For Reddit, Hacker News, forum, X and LinkedIn posts, a lead must be an EXPLICIT ask
+# close to a service. Regex fragments, case-insensitive, whole words. An ask is explicit when
+# it is in the first person ("we're looking for", "I need"), a question to the crowd ("can
+# anyone recommend"), or a sentence that opens with the ask ("Looking for a…", "Need a…").
+# A post counts when:
+#   (a) an explicit ask is followed by a person within ~4 words ("looking for a GTM consultant")
 #       and a service is named in the start of the post, or
 #   (b) a service is followed by "needed" ("automation expert needed"), or
-#   (c) an asking verb is followed by "help" or the service ("need an n8n workflow") AND the
+#   (c) an explicit ask is followed by "help" or the service ("need an n8n workflow") AND the
 #       post mentions paying, a budget or hiring. Without that, it reads like a support question.
-# Posts in a forum's jobs section, or tagged [hiring], only need to name a service.
+# Freelancer.com projects and posts tagged [hiring] only need to name a service.
 services:
   # GTM
   - gtm
@@ -55,19 +58,20 @@ services:
   - airtable
   - retool
 
-# Asking verbs.
+# First-person and crowd asks, which count anywhere in a post. A sentence that opens with
+# "looking for", "seeking", "need", "hiring" or "wanted" also counts (built into the matcher).
+# Bare "need" or "recommend" mid-sentence is left out on purpose: "every SaaS needs a RevOps
+# expert" and "I recommend a consultant" are promotion, not asks.
 intent:
-  - looking for
+  - (?:i|we)(?:'m|'re| am| are)? (?:currently |actively |urgently |now )?(?:looking for|seeking|searching for|trying to find|hoping to find)
+  - (?:i|we)(?:'m|'re| am| are) (?:looking to |trying to )?hir(?:e|ing)
+  - (?:i|we) (?:urgently |really |also )?need
+  - (?:i|we)(?:'d| would) like to hire
+  - (?:i|we) want to hire
   - looking to hire
-  - need(?:s|ed)?
-  - seeking
-  - want(?:s|ed)? to hire
-  - hire
-  - hiring
-  - recommend(?:ations?)?(?:\s+for)?
-  - anyone know
-  - who can
-  - can (?:anyone|someone) (?:recommend|help|build|set up)
+  - (?:can|could) (?:anyone|someone|somebody) (?:recommend|suggest|help|build|set up)
+  - any recommendations? for
+  - (?:does )?any(?:one|body) know (?:a|an|any|of|someone|somebody)
 
 # Who is being asked for.
 roles:
@@ -126,6 +130,15 @@ exclude:
   - data entry
   - translat\w+
   - looking for (?:a )?(?:work|clients?|projects?|job)
+  - ^seeking work
+  # content and announcements: titles only, since real asks use these words in passing
+  - (?:top )?\d+ (?:steps|tips|ways|lessons|things|mistakes|tools)
+  - (?:just|we) launched
+  - podcast
+  - survey
+  - tired of
+  - stop (?:wasting|losing)
+  - hottest role
 
 # Skip adverts and employers' full-time hiring posts. Checked on the title and the whole post.
 # Real requests talk about "my / our" business; adverts talk to "your" business, quote
@@ -169,6 +182,41 @@ exclude_text:
   - ask(?:s|ed)? me
   - do(?:es)? (?:i|you|my|your) (?:really )?need
   - interns?(?:hips?)?
+  # job seekers
+  - (?:looking for|seeking|searching for) (?:(?:a|new|more|freelance|remote|paid|part[- ]time|full[- ]time|my next|next|any)\s+){0,2}(?:work|clients?|projects?|jobs?|gigs?|opportunit\w+|roles?|positions?|openings?)
+  - open to (?:new |freelance |remote )?(?:work|opportunit\w+|roles?|projects?|offers?)
+  - available for (?:work|hire|freelance|projects?|new)
+  - hire me
+  - my (?:resume|cv|portfolio)
+  - how (?:do|can) i (?:get|break) into
+  - i'?d love to (?:be considered|join|work with|work on)
+  - (?:i'?m|i am) based in
+  - (?:i|i'?ve|i have) (?:got )?(?:over |more than )?\d+\+? years
+  # surveys and partnership hunts
+  - \[academic\]
+  - business partner
+  - business development
+  - client acquisition
+  # promotion and content
+  - (?:i|we) help (?:\w+ ){0,2}(?:founders|businesses|brands|startups|companies|teams|agencies|clients|b2b|saas|d2c|coaches)
+  - helping (?:\w+ ){0,2}(?:founders|businesses|brands|startups|companies|teams|agencies)
+  - (?:i|we)(?:'ve| have) helped
+  - i will (?:build|help|set up|create|design|automate)
+  - how (?:i|we) (?:built|build|helped|automated|got|scaled|grew)
+  - excited to (?:announce|share|launch)
+  - link in (?:bio|comments?)
+  - look no further
+  - (?:we|i)(?:'ve| have) got you
+  - beta testers?
+  - early (?:access|adopters|testers)
+  - waitlist
+  - to test (?:a|an|our|my)
+  - fellow builders
+  - here'?s (?:how|why)
+  - (?:equity[- ](?:based|only)|for equity|sweat equity)
+  - (?:looking for|seeking|need) (?:an? )?(?:investors?|funding|angel)
+  - to collaborate on
+  - alternatives? (?:to|for)
 
 # Reddit search over several subreddits at once. Without a Reddit app key this uses
 # the public RSS feed, which Reddit often blocks from GitHub's servers; set
@@ -233,17 +281,6 @@ forums:
   - name: Make community
     url: https://community.make.com/c/hire-a-pro/50
 
-# Newly funded Indian startups, from Google News. These need GTM and automation soon.
-funding:
-  queries:
-    - India startup raises seed funding
-    - India startup raises pre-seed
-    - India startup raises Series A
-    - India D2C brand raises funding
-  # Weekly roundups and investors' own funds are not startups to pitch.
-  exclude: [roundup, round-up, weekly, this week, fund, first close, venture capital firm]
-  max_per_run: 10
-
 # Google search through Serper (SERPER_API_KEY, falls back to SerpApi's SERPAPI_KEY)
 # for "looking for / seeking" posts on Reddit, X and LinkedIn. Skipped without a key.
 # One search per platform per group of services. X is left out: Google's X results
@@ -251,13 +288,14 @@ funding:
 # lasts about a year.
 web_search:
   platforms: [linkedin, reddit]
+  # First-person asks only: bare "recommend" or "need a" pulled in mostly promotion.
   asks:
-    - looking for
-    - seeking
-    - need a
+    - looking for a
+    - looking to hire
+    - we're looking for
     - need someone
-    - recommend
-    - anyone know
+    - can anyone recommend
+    - hiring a freelance
   groups:
     - [fractional GTM, GTM engineer, RevOps, revenue operations]
     - [n8n, Zapier, Make.com, workflow automation, AI automation]

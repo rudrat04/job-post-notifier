@@ -1,11 +1,11 @@
 import pLimit from "p-limit";
 import { sendEmail } from "../email";
+import { modeFrom, startRun } from "../runlog";
 import { createStore } from "../store";
 import { loadLeadsConfig } from "./config";
 import { buildLeadsDigest } from "./email";
 import { buildLeadMatcher } from "./filter";
 import { searchFreelancer } from "./sources/freelancer";
-import { dedupeFunding, searchFunding } from "./sources/funding";
 import { searchForum } from "./sources/forum";
 import { searchHackerNews } from "./sources/hackernews";
 import { batchQueries, searchReddit } from "./sources/reddit";
@@ -16,6 +16,7 @@ const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const bootstrap = args.has("--bootstrap");
 const testEmail = args.has("--test-email");
+const run = startRun("leads", modeFrom(args));
 
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
@@ -42,7 +43,7 @@ async function main() {
     });
 
   const tasks: Promise<Lead[]>[] = [];
-  const { reddit, hackernews, freelancer, funding } = config;
+  const { reddit, hackernews, freelancer } = config;
   for (const q of batchQueries(reddit?.queries ?? [], reddit?.queries_per_search ?? 12))
     tasks.push(task(`Reddit ${q}`, () => searchReddit(reddit!.subreddits, q), redditLimit));
   for (const f of config.forums) tasks.push(task(f.name, () => searchForum(f.name, f.url)));
@@ -70,18 +71,10 @@ async function main() {
     if (queries.length > web.max_queries) console.warn(`Web search capped at ${web.max_queries} of ${queries.length} queries`);
   }
 
-  const fundingKeywords = new RegExp(`(?:${(funding?.keywords ?? []).join("|")})`, "i");
-  const fundingExclude = funding?.exclude.length
-    ? new RegExp(`(?<![\\w])(?:${funding.exclude.join("|")})(?![\\w])`, "i")
-    : null;
-  const fundingTasks = (funding?.queries ?? []).map((q) =>
-    task(`Funding "${q}"`, async () =>
-      (await searchFunding(q)).filter((l) => fundingKeywords.test(l.title) && !fundingExclude?.test(l.title)),
-    ),
-  );
-
-  const [general, fundingLeads] = await Promise.all([Promise.all(tasks), Promise.all(fundingTasks)]);
-  const attempted = tasks.length + fundingTasks.length;
+  const general = await Promise.all(tasks);
+  const attempted = tasks.length;
+  run.failures = failures;
+  run.counts = { sources: attempted, failed: failures.length };
   if (attempted && failures.length === attempted) throw new Error("Every lead source failed");
 
   const unique = (leads: Lead[]) => [...new Map(leads.map((l) => [l.id, l])).values()];
@@ -89,7 +82,6 @@ async function main() {
   const all = [
     ...marketplace.filter((l) => l.source !== "freelancer"),
     ...marketplace.filter((l) => l.source === "freelancer").slice(0, freelancer?.max_per_run),
-    ...dedupeFunding(unique(fundingLeads.flat())).slice(0, funding?.max_per_run),
   ];
 
   const store = createStore("seen_leads");
@@ -97,6 +89,7 @@ async function main() {
   const seen = store ? await store.seenIds(all.map((l) => l.id)) : new Set<string>();
   const fresh = all.filter((l) => !seen.has(l.id));
   console.log(`\n${all.length} matching, ${fresh.length} new, ${failures.length} failed`);
+  Object.assign(run.counts, { matching: all.length, new: fresh.length });
 
   const rows = (leads: Lead[]) =>
     leads.map((l) => ({ id: l.id, company: l.origin ?? l.source, title: l.title, url: l.url, source: l.source }));
@@ -124,10 +117,14 @@ async function main() {
   }
   await sendEmail(digest); // send first, then record, so a failed send is retried next run
   await store!.markSeen(rows(fresh));
+  run.counts.emailed = fresh.length;
   console.log(`Emailed ${fresh.length} new leads.`);
 }
 
-main().catch((err) => {
-  console.error(errorMessage(err));
-  process.exit(1);
-});
+main()
+  .then(() => run.finish())
+  .catch(async (err) => {
+    console.error(errorMessage(err));
+    await run.finish(err);
+    process.exit(1);
+  });

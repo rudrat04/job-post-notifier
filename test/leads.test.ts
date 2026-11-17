@@ -3,7 +3,6 @@ import { loadLeadsConfig } from "../src/leads/config";
 import { buildLeadsDigest } from "../src/leads/email";
 import { buildLeadMatcher } from "../src/leads/filter";
 import { searchFreelancer } from "../src/leads/sources/freelancer";
-import { dedupeFunding, parseNewsFeed } from "../src/leads/sources/funding";
 import { batchQueries, parseRedditFeed } from "../src/leads/sources/reddit";
 import type { Lead } from "../src/leads/types";
 
@@ -69,6 +68,22 @@ describe("lead filter", () => {
     ["Which automation tool should I use?", "Need advice on Zapier vs Make"],
     ["Looking to build a free AI automation for a few businesses", ""],
     ["Foundry's Post", "We're hiring across our global teams, with opportunities in sales, RevOps and more. Looking for RevOps leaders"],
+    // Job seekers and promotion that reached the digest before asks had to be explicit.
+    ["Looking for Freelance Work in AI domain | AI Agents", "I build AI agents and n8n automations, looking for paid projects"],
+    ["Looking for 3–5 workflow automation builders to test a new tool", "Free access in exchange for feedback"],
+    ["Looking for fellow builders to collaborate on AI Agents", "Paid later once we get funding"],
+    ["Looking for equity based GTM and sales engineer", "Need a GTM engineer to help with outbound"],
+    ["Looking to start a GTM podcast - hoping to find someone", "Need someone who knows outbound"],
+    ["Frustrated with Zoho CRM. Looking for alternatives", "Need a CRM that our sales team will use"],
+    ["how to get into GTM engineering without any experience", "How do I get into GTM? I need help, happy to work for free"],
+    ["Do small teams really need a GTM engineer and Clay", "Most founders need a GTM engineer more than an SDR"],
+    ["GTM Engineer is the hottest role in European startups right now", "Every startup needs a GTM engineer"],
+    ["Shweta Mahtani's Post", "Every founder needs a RevOps expert. We help B2B SaaS founders fix their HubSpot. Budget-friendly."],
+    ["Nil Thakkar's Post", "Looking for an n8n expert? Look no further. We build AI automations for D2C brands."],
+    ["Michael Ingram's Post", "Here's how we automated lead routing in HubSpot for a client. Hire us for your next build."],
+    ["Jan Rasmussen's Post", "I recommend a fractional GTM consultant to every seed-stage founder I meet."],
+    ["How to Create a Workflow Automation That Scales in 7 Steps", "Need automation? Pay attention to these steps"],
+    ["[Academic] What Builds Buyer Trust? (Open to anyone)", "Why does finding a few customers in Clay have to become a whole RevOps project? ... Looking for a Business Partner / Investor"],
   ])("drops %s", (title, text) => {
     expect(match(lead(title, text))).toBe(false);
   });
@@ -101,6 +116,7 @@ describe("lead filter", () => {
     ["Make freelancer needed for project", "I need a scenario that syncs Typeform to Airtable"],
     ["Need help regarding n8n AI assistant and workflow. Please help i can pay you", ""],
     ["Hiring in San Diego (n8n & hubspot)", "Contract work for a local agency"],
+    ["[HIRING] Freelancer for Custom AI-Powered Marketing Attribution & Lead Automation Pipeline Project", ""],
   ])("keeps forum post %s", (title, text) => {
     expect(match(forum(title, text))).toBe(true);
   });
@@ -116,42 +132,40 @@ describe("lead filter", () => {
     ["Need help with a Make scenario or workflow automation?", "I can help you build and fix scenarios. Message me."],
     ["When does it actually make sense to put an AI agent on top of your Make scenarios?", "A lot of people assume adding AI to their automations will fix everything"],
     ["Looking for White-Label Make.com Automation Developers (Agency Partner)", ""],
+    ["Looking for Business Development & Client Acquisition Partners for AI Coders | AI Automation Agency", ""],
     ["Weekly community call", "Talk about n8n with the team"],
+    ["Former cafe owner turned automation specialist | BOS Automated, Sunshine Coast AU", "I build Make and n8n automations for small businesses"],
+    ["AI assistants, Make/n8n workflows & websites - Manuel Restrepo (EN/ES)", "Available for projects in English and Spanish"],
+    ["Signal Trading Bot Development: From Market Analysis to Automated Execution", "Fully automated n8n trading workflows"],
   ])("drops forum post %s", (title, text) => {
     expect(match(forum(title, text))).toBe(false);
   });
 
-  it("keeps funding stories without an intent check", () => {
-    expect(match(lead("Maasi raises ₹6 Cr in pre-seed", "", { source: "funding" }))).toBe(true);
-  });
-});
-
-describe("funding", () => {
-  const f = (title: string): Lead => lead(title, "", { source: "funding" });
-
-  it("collapses the same round reported by several outlets", () => {
-    const kept = dedupeFunding([
-      f("Maasi Raises ₹6 Crore in Pre-Seed Funding"),
-      f("Child-care startup Maasi raises Rs 6 Cr in pre-seed round"),
-      f("Bucketlistt.com Raises ₹7.6 Crore Seed Funding"),
-      f("From Rishikesh rafting to Manali: Bucketlistt raises Rs 7.6 crore"),
-      f("Nova Spectral AI Raises Rs 21.15 Crore"),
-      f("Cent Raises $15 Million in Series A"),
-    ]);
-    expect(kept.map((l) => l.title)).toEqual([
-      "Maasi Raises ₹6 Crore in Pre-Seed Funding",
-      "Bucketlistt.com Raises ₹7.6 Crore Seed Funding",
-      "Nova Spectral AI Raises Rs 21.15 Crore",
-      "Cent Raises $15 Million in Series A",
-    ]);
+  it("keeps explicit asks in Reddit and LinkedIn posts", () => {
+    expect(match(lead("Looking for GTM engineers for contract work.", "We're a seed-stage B2B SaaS"))).toBe(true);
+    expect(match(lead("Hey i am gtm engineer I have 4 clients I need help", "Need someone to help with Clay tables, paid"))).toBe(true);
+    expect(match(lead("Priya's Post", "Hi all, we're looking for a freelance HubSpot consultant to clean up our CRM."))).toBe(true);
   });
 
-  it("parses a Google News feed and strips the outlet suffix", () => {
-    const xml = `<rss><channel><item><title>Maasi raises ₹6 Cr pre-seed funding - ET Entrepreneur</title>
-      <link>https://news.example/1</link><pubDate>Tue, 27 Oct 2026 08:00:00 GMT</pubDate>
-      <source url="https://et.example">ET Entrepreneur</source></item></channel></rss>`;
-    const [l] = parseNewsFeed(xml);
-    expect(l).toMatchObject({ title: "Maasi raises ₹6 Cr pre-seed funding", origin: "ET Entrepreneur", source: "funding" });
+  it.each([
+    ["Ops help", "Here's what we need: a HubSpot consultant to clean up our CRM. Budget $500."],
+    ["Ops help", "Tired of manual follow-ups. Need a Zapier expert to automate our lead routing, paid."],
+    ["GTM help", "We're a seed-stage startup backed by great investors, looking for a fractional GTM engineer."],
+    ["n8n help", "We launched last month and need someone to set up n8n workflows for lead gen, budget $400."],
+    ["Zapier help", "We use 5 tools and need someone to connect them with Zapier, paid."],
+  ])("keeps a real ask that shares words with promotion: %s / %s", (title, text) => {
+    expect(match(lead(title, text))).toBe(true);
+  });
+
+  it("keeps Freelancer.com projects that name a service", () => {
+    expect(match(lead("n8n workflow for lead enrichment", "Connect Apollo to our sheet", { source: "freelancer" }))).toBe(true);
+  });
+
+  it("keeps only contract or fractional roles from Who is hiring threads", () => {
+    const hn = (text: string) => lead(text.slice(0, 60), text, { source: "hackernews", origin: 'on "Ask HN: Who is hiring? (November 2026)"' });
+    expect(match(hn("AetherGrid | Founding GTM Lead | REMOTE (Worldwide) | Paid, Fractional / Contract"))).toBe(true);
+    expect(match(hn("Acme | GTM Engineer | Onsite SF | Salaried"))).toBe(false);
+    expect(match(hn("Hey! I'm based in Pakistan and have over 4 years of freelance full-stack experience (alongside automation work). I'd love to be considered"))).toBe(false);
   });
 });
 
@@ -199,12 +213,12 @@ describe("freelancer", () => {
 describe("leads email", () => {
   it("groups by platform and reports failures", () => {
     const d = buildLeadsDigest(
-      [lead("Need a landing page", "Budget $300", { origin: "r/forhire" }), lead("Maasi raises", "", { source: "funding" })],
+      [lead("Need a landing page", "Budget $300", { origin: "r/forhire" }), lead("n8n project", "", { source: "freelancer" })],
       ["Reddit (HTTP 429)"],
     );
     expect(d.subject).toMatch(/^2 new freelance leads/);
     expect(d.text).toContain("Reddit: people asking for help");
-    expect(d.text).toContain("Newly funded startups");
+    expect(d.text).toContain("Freelancer.com projects");
     expect(d.text).toContain("Couldn't check: Reddit (HTTP 429)");
     expect(d.html).toContain("Need a landing page");
   });

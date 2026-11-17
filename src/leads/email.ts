@@ -10,11 +10,10 @@ const HEADINGS: Record<LeadSource, string> = {
   hackernews: "Hacker News",
   forum: "n8n / Make forums: hire-a-pro posts",
   freelancer: "Freelancer.com projects",
-  funding: "Newly funded startups",
   x: "X (Twitter) posts",
   linkedin: "LinkedIn posts",
 };
-const ORDER: LeadSource[] = ["forum", "reddit", "x", "linkedin", "hackernews", "freelancer", "funding"];
+const ORDER: LeadSource[] = ["forum", "reddit", "x", "linkedin", "hackernews", "freelancer"];
 
 const snippet = (s: string) => (s.length > 220 ? `${s.slice(0, 220).trimEnd()}…` : s);
 

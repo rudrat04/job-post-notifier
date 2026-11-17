@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getJson, htmlToText } from "../../http";
+import { htmlToText, request } from "../../http";
 import type { Lead } from "../types";
 import { redditLeadId } from "./reddit";
 
@@ -41,7 +41,7 @@ export function parseResultDate(text: string | undefined, now = Date.now()): str
   return Number.isNaN(abs) ? undefined : new Date(abs).toISOString();
 }
 
-interface Result {
+export interface SearchResult {
   title?: string;
   link?: string;
   snippet?: string;
@@ -61,7 +61,7 @@ export function ownText(snippet: string): string {
     .trim();
 }
 
-function leadFrom(platform: Platform, r: Result, now: number): Lead | null {
+function leadFrom(platform: Platform, r: SearchResult, now: number): Lead | null {
   if (!r.link || !r.title || !POST_URL[platform].test(r.link)) return null;
   // LinkedIn post links carry the post's hashtags ("..._hiring-salesjobs-activity-…"), so job ads show in the URL.
   if (platform === "linkedin" && /[_-](?:now)?hiring|jobs?[-_]|careers|internships?/i.test(r.link)) return null;
@@ -78,21 +78,27 @@ function leadFrom(platform: Platform, r: Result, now: number): Lead | null {
   };
 }
 
+/** Both search APIs bill per request, so a failed one is never retried. */
+async function getPaidJson<T>(url: string, init?: RequestInit): Promise<T> {
+  return (await request(url, init, 0)).json() as Promise<T>;
+}
+
 /** Serper (Google results). One credit per search. */
-async function viaSerper(key: string, q: string, days: number, num: number): Promise<Result[]> {
-  const data = await getJson<{ organic?: Result[] }>("https://google.serper.dev/search", {
+async function viaSerper(key: string, q: string, days: number | undefined, num: number): Promise<SearchResult[]> {
+  const data = await getPaidJson<{ organic?: SearchResult[] }>("https://google.serper.dev/search", {
     method: "POST",
     headers: { "x-api-key": key, "content-type": "application/json" },
     // Free Serper accounts reject more than 10 results per search.
-    body: JSON.stringify({ q, num: Math.min(num, 10), tbs: `qdr:d${days}`, gl: "in", hl: "en" }),
+    body: JSON.stringify({ q, num: Math.min(num, 10), ...(days ? { tbs: `qdr:d${days}` } : {}), gl: "in", hl: "en" }),
   });
   return data.organic ?? [];
 }
 
 /** SerpApi, used when Serper fails or has no key. */
-async function viaSerpApi(key: string, q: string, days: number, num: number): Promise<Result[]> {
-  const params = new URLSearchParams({ engine: "google", q, tbs: `qdr:d${days}`, num: String(num), gl: "in", hl: "en", api_key: key });
-  const data = await getJson<{ organic_results?: Result[]; error?: string }>(`https://serpapi.com/search.json?${params}`);
+async function viaSerpApi(key: string, q: string, days: number | undefined, num: number): Promise<SearchResult[]> {
+  const params = new URLSearchParams({ engine: "google", q, num: String(num), gl: "in", hl: "en", api_key: key });
+  if (days) params.set("tbs", `qdr:d${days}`);
+  const data = await getPaidJson<{ organic_results?: SearchResult[]; error?: string }>(`https://serpapi.com/search.json?${params}`);
   if (data.error && /hasn't returned any results/i.test(data.error)) return [];
   if (data.error) throw new Error(`SerpApi: ${data.error}`);
   return data.organic_results ?? [];
@@ -100,6 +106,26 @@ async function viaSerpApi(key: string, q: string, days: number, num: number): Pr
 
 export function hasSearchKey(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(env.SERPER_API_KEY || env.SERPAPI_KEY);
+}
+
+/** Google results through Serper, falling back to SerpApi. `days` limits results to the last N days. */
+export async function googleSearch(
+  query: string,
+  days: number | undefined,
+  num: number,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<SearchResult[]> {
+  try {
+    if (!env.SERPER_API_KEY) throw new Error("no Serper key");
+    return await viaSerper(env.SERPER_API_KEY, query, days, num);
+  } catch (err) {
+    if (!env.SERPAPI_KEY) throw err;
+    try {
+      return await viaSerpApi(env.SERPAPI_KEY, query, days, num);
+    } catch (fallbackErr) {
+      throw new Error(`${(err as Error).message}; then ${(fallbackErr as Error).message}`);
+    }
+  }
 }
 
 export async function searchWeb(
@@ -110,17 +136,6 @@ export async function searchWeb(
   env: NodeJS.ProcessEnv = process.env,
   now = Date.now(),
 ): Promise<Lead[]> {
-  let results: Result[];
-  try {
-    if (!env.SERPER_API_KEY) throw new Error("no Serper key");
-    results = await viaSerper(env.SERPER_API_KEY, query, days, num);
-  } catch (err) {
-    if (!env.SERPAPI_KEY) throw err;
-    try {
-      results = await viaSerpApi(env.SERPAPI_KEY, query, days, num);
-    } catch (fallbackErr) {
-      throw new Error(`${(err as Error).message}; then ${(fallbackErr as Error).message}`);
-    }
-  }
+  const results = await googleSearch(query, days, num, env);
   return results.flatMap((r) => leadFrom(platform, r, now) ?? []);
 }

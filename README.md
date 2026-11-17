@@ -8,6 +8,7 @@ Checks the public job feeds of Greenhouse, Lever, Ashby and Workable boards for 
 
 ## Setup
 1. Run `supabase/migrations/001_seen_jobs.sql` in your Supabase project.
+   Also run `supabase/migrations/006_run_logs.sql`: every run of every script (jobs, leads, events, prospects, founders) adds a row to `run_logs` with its status (`ok`, `partial` when some sources failed, `failed` when it crashed), counts and the reasons sources failed. That includes runs that sent no email, so it's where to look when a digest is quiet or missing. Without the table, runs still work and print one warning.
 2. Copy `.env.example` to `.env` and fill it in. The keys are under Supabase → Project Settings → API (service role key) and on resend.com.
 3. `npm install`
 4. `npm run dry-run`: fetches, filters and prints the digest. It sends and saves nothing, and needs no keys.
@@ -41,9 +42,20 @@ For employers' own boards, `npm run discover` reads company names from `config/c
 - **Reddit**: one search across GTM, sales, e-commerce and automation subreddits. Without a key it uses the public feed, which Reddit often blocks from GitHub's servers; a free Reddit "script" app (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`) makes it reliable.
 - **Hacker News** posts and comments, through the free Algolia search.
 - **LinkedIn and Reddit posts via Google** (Serper, `SERPER_API_KEY`, with SerpApi's `SERPAPI_KEY` as a fallback): 6 searches a run. Skipped without a key.
-- **Newly funded Indian startups and D2C brands** from Google News, which will need GTM and automation soon.
 
-A post counts only when it asks for help with a service in the list, and adverts, people offering their own services and full-time job posts are dropped. `npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` is meant to be started daily by cron-job.org. Sent leads are remembered in the `seen_leads` table (`supabase/migrations/004_seen_leads.sql`).
+A post counts only when it explicitly asks for help with a service in the list: in the first person ("we're looking for a HubSpot consultant", "I need someone to…"), as a question to the crowd ("can anyone recommend…"), or as a sentence that opens with the ask ("Looking for a GTM engineer", "n8n expert needed"). Talk about a role ("every founder needs a RevOps expert") isn't an ask. Adverts and promotion, job seekers ("looking for freelance work", "open to opportunities"), surveys, partnership hunts and full-time job posts are dropped. Freelancer.com projects only need to name a service, and in Hacker News "Who is hiring" threads only contract and fractional roles count. `npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` is meant to be started daily by cron-job.org. Sent leads are remembered in the `seen_leads` table (`supabase/migrations/004_seen_leads.sql`).
+
+## Founders to DM
+`npm run founders` emails a separate list of founders at freshly funded Indian startups where nobody on the team shows up on LinkedIn as a GTM Engineer or GTM Lead, in the Founder's Office, as a Founder's Associate, Chief of Staff or Product Marketing Manager. Each entry has the founders' names with their LinkedIn profiles and a LinkedIn search link for the company, ready for a cold DM. Everything is set in `config/founders.yaml`, including the list of role titles and their spellings.
+- Company names come from Google News funding stories from the past 7 days (free).
+- **Exa** (`EXA_API_KEY`) people search finds each company's founders from their LinkedIn work history, then a second search looks for anyone currently in one of the roles. It costs about $0.007 a search, and the free monthly credit covers well over 1,000.
+- **People Data Labs** (`PDL_API_KEY`) gets asked when Exa finds no one in the roles. It's free when PDL finds nobody, and 1 credit when it finds someone. Its data lags LinkedIn by months, so it can only rule a company out. The free plan allows 10 searches a minute, so the run waits between calls.
+- Exa misses some people, so Google (Serper) fills in: one search for founders when Exa finds none, and one search for the roles before a company that still looks like a gap is emailed. That comes to about 10 Serper searches a week.
+- Without an Exa key, Google (Serper) finds founders and role holders instead, from search-result titles. That is less accurate and uses up the one-off Serper allowance.
+- "No one found" is a strong hint, not proof. Glance at the company's People tab before you DM.
+- Every company checked is remembered in `seen_founders` (`supabase/migrations/007_seen_founders.sql`), whatever the outcome, so no company is searched twice.
+
+A run checks up to 20 companies, with per-provider caps under `limits`; the rest wait for the next run. Start `founders.yml` weekly from cron-job.org, and add `EXA_API_KEY` and `PDL_API_KEY` to the repo secrets. `npm run founders:dry-run` prints without emailing or saving, but its searches still count.
 
 ## Google Maps prospects
 `npm run prospects` finds B2B, D2C and SME businesses on Google Maps that look like they need GTM or automation help, and emails a ranked list once a week. Everything is set in `config/prospects.yaml`. Nothing is sent to the businesses: reach out by hand.

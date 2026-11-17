@@ -1,6 +1,6 @@
-export type LeadSource = "reddit" | "hackernews" | "forum" | "freelancer" | "funding" | "x" | "linkedin";
+export type LeadSource = "reddit" | "hackernews" | "forum" | "freelancer" | "x" | "linkedin";
 
-/** Someone who may need your services: a request for help, a project post, or a freshly funded startup. */
+/** Someone who may need your services: a request for help, or a project post. */
 export interface Lead {
   /** sha1 of source + url, so a lead is only sent once. */
   id: string;

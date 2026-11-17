@@ -58,17 +58,6 @@ const leadsSchema = z.object({
       max_per_run: z.number().int().positive().default(10),
     })
     .optional(),
-  /** Funding news (Google News). Every matching story is a lead; no intent check. */
-  funding: z
-    .object({
-      queries: z.array(z.string()).min(1),
-      /** Stories must match one of these to count as a funding round. */
-      keywords: z.array(z.string()).default(["rais", "funding", "seed", "series [a-c]"]),
-      /** Headlines matching any of these are dropped (roundups, VC funds). Whole words. */
-      exclude: z.array(z.string()).default([]),
-      max_per_run: z.number().int().positive().default(10),
-    })
-    .optional(),
 });
 
 export type LeadsConfig = z.infer<typeof leadsSchema>;
