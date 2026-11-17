@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { sendEmail } from "../email";
+import { modeFrom, startRun } from "../runlog";
 import { createStore } from "../store";
 import { loadEvents } from "./config";
 import { buildEventsDigest } from "./email";
@@ -13,6 +14,7 @@ const dryRun = args.has("--dry-run");
 const bootstrap = args.has("--bootstrap");
 // With --dry-run, also list events that were already emailed.
 const includeSeen = args.has("--all");
+const runLog = startRun("events", modeFrom(args));
 
 async function main() {
   const cfg = await loadEvents();
@@ -27,6 +29,7 @@ async function main() {
         console.log(`${label}: ${events.length} events`);
         return events;
       } catch (err) {
+        console.warn(`${label}: FAILED — ${(err as Error).message}`);
         failures.push(`${label} (${(err as Error).message})`);
         return [];
       }
@@ -36,7 +39,12 @@ async function main() {
     ...cfg.cities.map((c) => run(`Luma ${c.name}`, () => fetchLuma(c, cfg))),
     ...(cfg.virtual ? cfg.meetup.online_queries.map((q) => run(`Meetup online "${q}"`, () => fetchMeetupOnline(q))) : []),
   ];
-  const found = (await Promise.all(tasks)).flat().map(match.markBig).filter((e) => match(e));
+  const results = await Promise.all(tasks);
+  runLog.failures = failures;
+  runLog.counts = { sources: tasks.length, failed: failures.length };
+  // Without this, a broken API would look like a quiet week: no email and a green run.
+  if (tasks.length && failures.length === tasks.length) throw new Error("Every event source failed");
+  const found = results.flat().map(match.markBig).filter((e) => match(e));
 
   const matched = dedupeEvents(found);
 
@@ -45,7 +53,7 @@ async function main() {
   const seen = store ? await store.seenIds(matched.map((e) => e.id)) : new Set<string>();
   const fresh = matched.filter((e) => (dryRun && includeSeen) || !seen.has(e.id));
   console.log(`${matched.length} matching, ${fresh.length} new, ${failures.length} failed`);
-  for (const f of failures) console.log(`  failed: ${f}`);
+  Object.assign(runLog.counts, { matching: matched.length, new: fresh.length });
 
   const rows = fresh.map((e) => ({ id: e.id, company: e.where, title: e.title, url: e.url, source: e.source }));
 
@@ -59,15 +67,22 @@ async function main() {
     console.log(`Marked ${rows.length} events as seen; no email sent.`);
     return;
   }
-  if (!fresh.length) return;
+  if (!fresh.length) {
+    console.log("No new events; no email sent.");
+    return;
+  }
 
   // Send first, then record, so a failed send is retried on the next run.
   await sendEmail(buildEventsDigest(fresh, failures));
   await store!.markSeen(rows);
+  runLog.counts.emailed = fresh.length;
   console.log(`Emailed ${fresh.length} new events.`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main()
+  .then(() => runLog.finish())
+  .catch(async (err) => {
+    console.error(err);
+    await runLog.finish(err);
+    process.exit(1);
+  });

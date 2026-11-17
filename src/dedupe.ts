@@ -33,14 +33,17 @@ export function mergeDuplicates<T extends Job>(jobs: T[]): T[] {
     }
     const locations = [...new Set([...cur.location.split(" / "), ...job.location.split(" / ")].filter(Boolean))];
     const better = AGGREGATORS.includes(cur.source) && !AGGREGATORS.includes(job.source) ? job : cur;
-    byId.set(job.id, {
+    const merged: T = {
       ...cur,
       url: better.url,
       source: better.source,
       location: locations.join(" / "),
       remote: cur.remote || job.remote,
       postedAt: cur.postedAt ?? job.postedAt,
-    });
+    };
+    // One copy may have had no location while another did; don't flag the merged job.
+    if ("locationMissing" in merged) Object.assign(merged, { locationMissing: !merged.location.trim() });
+    byId.set(job.id, merged);
   }
   return [...byId.values()];
 }

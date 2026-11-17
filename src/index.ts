@@ -7,12 +7,14 @@ import { fetchJobs } from "./sources";
 import { findJobspy } from "./sources/jobspy";
 import { planSearches } from "./sources/search";
 import { contentId, mergeDuplicates } from "./dedupe";
+import { modeFrom, startRun } from "./runlog";
 import { createStore } from "./store";
 import type { Job, MatchedJob, SourceFailure } from "./types";
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const bootstrap = args.has("--bootstrap");
+const run = startRun("jobs", modeFrom(args));
 
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
@@ -70,7 +72,9 @@ async function main() {
   );
 
   const results = await Promise.all([...fromCompanies, ...fromSearch]);
-  if (failures.length === results.length) throw new Error("Every source failed to load");
+  run.failures = failures.map((f) => `${f.company} (${f.reason})`);
+  run.counts = { boards: checked, searches: tasks.length, failed: failures.length };
+  if (results.length && failures.length === results.length) throw new Error("Every source failed to load");
   console.log(`\nChecked ${checked} company boards and ${tasks.length} searches.`);
 
   // The same role is often found on several sites; give each one id per company + title and merge them.
@@ -82,6 +86,7 @@ async function main() {
   const seen = store ? await store.seenIds(matched.map((j) => j.id)) : new Set<string>();
   const fresh = matched.filter((j) => !seen.has(j.id));
   console.log(`${matched.length} matching, ${fresh.length} new, ${failures.length} failed`);
+  Object.assign(run.counts, { matching: matched.length, new: fresh.length });
 
   if (bootstrap) {
     await store!.markSeen(fresh);
@@ -102,10 +107,14 @@ async function main() {
   // Send first, then record, so a failed send is retried on the next run.
   await sendEmail(digest);
   await store!.markSeen(fresh as Job[]);
+  run.counts.emailed = fresh.length;
   console.log(`Emailed ${fresh.length} new jobs.`);
 }
 
-main().catch((err) => {
-  console.error(errorMessage(err));
-  process.exit(1);
-});
+main()
+  .then(() => run.finish())
+  .catch(async (err) => {
+    console.error(errorMessage(err));
+    await run.finish(err);
+    process.exit(1);
+  });

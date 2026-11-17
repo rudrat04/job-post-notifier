@@ -5,30 +5,45 @@ export class HttpError extends Error {
     public status: number,
     url: string,
   ) {
-    super(`HTTP ${status} from ${url}`);
+    // Only the path: query strings can carry API keys (SerpApi's api_key), and this
+    // message is printed in the logs and the digest's "Couldn't check" line.
+    super(`HTTP ${status} from ${url.split("?")[0]}`);
   }
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Never wait longer than this for a Retry-After, so a run can't stall for an hour. */
+const MAX_RETRY_WAIT_MS = 30_000;
 
 /** GET/POST with a timeout, retrying 429 and 5xx responses with backoff. */
-export async function request(url: string, init: RequestInit = {}, retries = 3): Promise<Response> {
+export async function request(
+  url: string,
+  init: RequestInit = {},
+  retries = 3,
+  timeoutMs = 20_000,
+): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     try {
       const res = await fetch(url, {
         ...init,
         headers: { "user-agent": USER_AGENT, accept: "application/json", ...init.headers },
-        signal: AbortSignal.timeout(20_000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       if (res.ok) return res;
       if ((res.status === 429 || res.status >= 500) && attempt < retries) {
         const retryAfter = Number(res.headers.get("retry-after")) * 1000;
-        await sleep(retryAfter || 1000 * 2 ** attempt);
+        await sleep(Math.min(retryAfter || 1000 * 2 ** attempt, MAX_RETRY_WAIT_MS));
         continue;
       }
       throw new HttpError(res.status, url);
     } catch (err) {
-      if (err instanceof HttpError || attempt >= retries) throw err;
+      if (err instanceof HttpError) throw err;
+      if (attempt >= retries) {
+        if (err instanceof Error && err.name === "TimeoutError") {
+          throw new Error(`timed out after ${timeoutMs / 1000}s (${url.split("?")[0]})`);
+        }
+        throw err;
+      }
       await sleep(1000 * 2 ** attempt);
     }
   }

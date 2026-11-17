@@ -63,6 +63,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** JSearch answers 429 to parallel requests, so they go out one at a time, spaced apart. */
 let jsearchQueue: Promise<unknown> = Promise.resolve();
 const JSEARCH_GAP_MS = 1500;
+/** /search-v2 scrapes live, and broad queries (e.g. "... in India") can take well over 20s. */
+const JSEARCH_TIMEOUT_MS = 60_000;
 
 export async function searchJSearch(
   apiKey: string,
@@ -74,7 +76,8 @@ export async function searchJSearch(
     query: `${query} in ${where}`,
     num_pages: "1",
     country: "in",
-    date_posted: dayRange <= 1 ? "today" : dayRange <= 3 ? "3days" : "week",
+    // max_age_days 0 means "no limit", so it maps to "all", not "today".
+    date_posted: dayRange <= 0 ? "all" : dayRange <= 1 ? "today" : dayRange <= 3 ? "3days" : dayRange <= 7 ? "week" : "month",
   });
   // No retries: every attempt counts against the monthly quota.
   const call = jsearchQueue.then(() =>
@@ -82,6 +85,7 @@ export async function searchJSearch(
       `https://jsearch.p.rapidapi.com/search-v2?${params}`,
       { headers: { "x-rapidapi-key": apiKey, "x-rapidapi-host": "jsearch.p.rapidapi.com" } },
       0,
+      JSEARCH_TIMEOUT_MS,
     ),
   );
   jsearchQueue = call.catch(() => {}).then(() => sleep(JSEARCH_GAP_MS));

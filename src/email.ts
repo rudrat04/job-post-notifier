@@ -96,6 +96,7 @@ export async function sendEmail(digest: { subject: string; html: string; text: s
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${RESEND_API_KEY}`, "content-type": "application/json" },
+    signal: AbortSignal.timeout(30_000),
     body: JSON.stringify({
       from: EMAIL_FROM || "Job Notifier <onboarding@resend.dev>",
       to: EMAIL_TO.split(",").map((s) => s.trim()),

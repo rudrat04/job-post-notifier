@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { sendEmail } from "../email";
+import { modeFrom, startRun } from "../runlog";
 import { dropChains, loadProspectsConfig, planSearches } from "./config";
 import { buildProspectsDigest } from "./email";
 import { type Place, textSearch } from "./places";
@@ -11,6 +12,7 @@ const args = new Set(argv);
 const dryRun = args.has("--dry-run");
 const bootstrap = args.has("--bootstrap");
 /** --requests N: use at most N requests this run (for testing). */
+const run = startRun("prospects", modeFrom(args));
 const requestsArg = argv.includes("--requests") ? Number(argv[argv.indexOf("--requests") + 1]) : undefined;
 
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
@@ -56,6 +58,8 @@ async function main() {
       failures.push(`${label} (${errorMessage(err)})`);
     }
   }
+  run.failures = failures;
+  run.counts = { requests: budget.runCount, used_this_month: budget.used, failed: failures.length };
   if (budget.runCount && failures.length === budget.runCount) throw new Error("Every Places search failed");
 
   const candidates = dropChains([...found.values()]).filter(
@@ -79,6 +83,7 @@ async function main() {
     .sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount)
     .slice(0, config.max_per_email);
   console.log(`\n${found.size} places, ${fresh.length} new and big enough, ${picked.length} worth emailing.`);
+  Object.assign(run.counts, { places: found.size, new: fresh.length, picked: picked.length });
 
   if (bootstrap) {
     await store!.markSeen(picked.map((p) => p.id));
@@ -102,10 +107,14 @@ async function main() {
   }
   await sendEmail(digest);
   await store!.markSeen(picked.map((p) => p.id));
+  run.counts.emailed = picked.length;
   console.log(`Emailed ${picked.length} prospects.`);
 }
 
-main().catch((err) => {
-  console.error(errorMessage(err));
-  process.exit(1);
-});
+main()
+  .then(() => run.finish())
+  .catch(async (err) => {
+    console.error(errorMessage(err));
+    await run.finish(err);
+    process.exit(1);
+  });
