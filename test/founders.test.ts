@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { allTitles, loadFoundersConfig } from "../src/founders/config";
 import { buildFoundersDigest } from "../src/founders/email";
 import { companiesFromNews, companyFromHeadline, parseNewsFeed } from "../src/founders/funding";
-import { exaFounders, exaRoleHolders, sameCompany, type ExaPerson } from "../src/founders/exa";
+import { exaFounders, exaHeadcount, exaRoleHolders, sameCompany, type ExaPerson } from "../src/founders/exa";
 import { pdlPhrase, pdlQuery } from "../src/founders/pdl";
 import { interleave, atCompany, foundersIn, parseProfile, roleHoldersIn, rolePattern, roleQuery } from "../src/founders/linkedin";
 
@@ -153,6 +153,13 @@ describe("Exa people", () => {
     expect(exaRoleHolders([person("Jasmine Chye", [["Chief of Staff", "Paradigm", null]])], "Olyv", roles)).toEqual([]);
   });
 
+  it("reads headcount for the right company only", () => {
+    const company = (name: string, total?: number) => ({ title: name, entities: [{ properties: { name, workforce: total == null ? null : { total } } }] });
+    expect(exaHeadcount([company("MoneyTap", 900), company("Olyv", 453)], "Olyv")).toBe(453);
+    expect(exaHeadcount([company("Morsa")], "Morsa")).toBeNull();
+    expect(exaHeadcount([company("Mosaic", 12)], "Morsa")).toBeNull();
+  });
+
   it("matches company names with suffixes", () => {
     expect(sameCompany("Olyv India (formerly SmartCoin)", "Olyv")).toBe(true);
     expect(sameCompany("Acme Technologies Pvt. Ltd.", "Acme")).toBe(true);
@@ -179,6 +186,7 @@ describe("founders email", () => {
           founders: [{ name: "Priya Shah", headline: "Co-Founder - Acme", url: "https://www.linkedin.com/in/priya" }],
           missing: ["GTM", "Product Marketing"],
           has: ["Founder's Office: Rahul Verma (Chief of Staff)"],
+          size: 18,
         },
       ],
       Object.keys(config.role_groups),
@@ -187,7 +195,8 @@ describe("founders email", () => {
     expect(d.subject).toMatch(/^1 startup to DM: missing GTM \/ Founder's Office \/ Product Marketing/);
     expect(d.text).toContain("Missing: GTM, Product Marketing (has Founder's Office: Rahul Verma (Chief of Staff))");
     expect(d.text).toContain("Priya Shah (Co-Founder - Acme): https://www.linkedin.com/in/priya");
-    expect(d.text).toContain("linkedin.com/search/results/companies/?keywords=Acme");
+    expect(d.text).toContain("Acme (18 people) — https://www.linkedin.com/search/results/companies/?keywords=Acme");
+    expect(d.text).toContain("(up to 50 people)");
     expect(d.html).toContain("Missing: GTM, Product Marketing");
     expect(d.html).toContain("3 more companies wait");
   });

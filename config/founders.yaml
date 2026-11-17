@@ -2,6 +2,7 @@
 # groups below (GTM, Founder's Office, Product Marketing) on LinkedIn. Run with `npm run founders`; emailed separately from everything else.
 #
 # How it works: Google News funding stories give company names (free). For each company:
+#   0. Exa company search gets the headcount; companies over `max_employees` are skipped.
 #   1. Exa people search (EXA_API_KEY) finds the founders from LinkedIn work history.
 #   2. A second Exa search looks for anyone currently at the company in the role groups.
 #   3. For each group still empty, People Data Labs (PDL_API_KEY) gets asked. That's free when
@@ -58,10 +59,15 @@ role_groups:
 # Founders listed per company (co-founders included; the CEO counts too).
 max_founders_per_company: 3
 
+# Skip companies with more people than this. Headcount comes from Exa's company search
+# (one search per company, done first so big companies cost nothing more). Companies Exa
+# has no headcount for are kept and marked "size unknown"; early startups often have none.
+max_employees: 50
+
 # Companies checked per run; the rest wait for the next run.
 max_companies: 20
 
-# Searches per run, at most, by provider. About 2 per company.
+# Searches per run, at most, by provider. About 3 Exa per company (size, founders, roles).
 #   exa:    ~$0.007 each; the free tier's monthly credit covers well over 1,000.
 #   google: Serper: about one per company (founders Exa missed, and the double-check), or
 #           two per company without an Exa key. Its free 2,500 are a one-off allowance
@@ -70,6 +76,6 @@ max_companies: 20
 #           The free plan allows 10 a minute, so the run waits between calls.
 # Dry runs spend searches too.
 limits:
-  exa: 45
+  exa: 60
   google: 30
   pdl: 45

@@ -48,14 +48,15 @@ A post counts only when it explicitly asks for help with a service in the list: 
 ## Founders to DM
 `npm run founders` emails a separate list of founders at freshly funded Indian startups that are missing at least one of three role groups on LinkedIn: **GTM** (GTM Engineer, GTM Lead), **Founder's Office** (Founder's Office, Founder's Associate, Chief of Staff, CEO's Office) and **Product Marketing**. Each entry says which groups are missing and who fills the others, with the founders' names, their LinkedIn profiles and a LinkedIn search link for the company, ready for a cold DM. Companies missing the most roles come first. The groups and their titles are set in `config/founders.yaml`.
 - Company names come from Google News funding stories from the past 7 days (free).
+- Only companies with at most 50 people (`max_employees`) are kept. The headcount comes from Exa's company search, one search per company, done first so big companies cost nothing more. Companies Exa has no headcount for are kept and marked "size unknown".
 - **Exa** (`EXA_API_KEY`) people search finds each company's founders from their LinkedIn work history, then a second search looks for anyone currently in the role groups. It costs about $0.007 a search, and the free monthly credit covers well over 1,000.
 - **People Data Labs** (`PDL_API_KEY`) gets asked once for each group still empty. It's free when PDL finds nobody, and 1 credit when it finds someone. Its data lags LinkedIn by months, so it can only rule a company out. The free plan allows 10 searches a minute, so the run waits between calls.
-- Exa misses some people, so Google (Serper) fills in: one search for founders when Exa finds none, and one search to double-check the groups still empty. That comes to about 20 Serper searches a week.
+- Exa misses some people, so Google (Serper) fills in: one search for founders when Exa finds none, and one search to double-check the groups still empty. That comes to about 1 to 2 Serper searches per new company, around 80 a month.
 - Without an Exa key, Google (Serper) finds founders and role holders instead, from search-result titles. That is less accurate and uses up the one-off Serper allowance.
 - "No one found" is a strong hint, not proof. Glance at the company's People tab before you DM.
 - Every company checked is remembered in `seen_founders` (`supabase/migrations/007_seen_founders.sql`), whatever the outcome, so no company is searched twice.
 
-A run checks up to 20 companies, with per-provider caps under `limits`; the rest wait for the next run. Start `founders.yml` weekly from cron-job.org, and add `EXA_API_KEY` and `PDL_API_KEY` to the repo secrets. `npm run founders:dry-run` prints without emailing or saving, but its searches still count.
+A run checks up to 20 companies, with per-provider caps under `limits`; the rest wait for the next run. Start `founders.yml` every other day from cron-job.org. Companies already checked are skipped, so searches scale with how many startups raise money, not with how often it runs. The news window is 7 days, so a missed run loses nothing. and add `EXA_API_KEY` and `PDL_API_KEY` to the repo secrets. `npm run founders:dry-run` prints without emailing or saving, but its searches still count.
 
 ## Google Maps prospects
 `npm run prospects` finds B2B, D2C and SME businesses on Google Maps that look like they need GTM or automation help, and emails a ranked list once a week. Everything is set in `config/prospects.yaml`. Nothing is sent to the businesses: reach out by hand.

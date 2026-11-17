@@ -60,8 +60,27 @@ export function exaRoleHolders(people: ExaPerson[], company: string, roles: RegE
   });
 }
 
-/** Exa people search. About $0.007 a search; the free tier's monthly credit covers well over 1,000. */
-export async function searchExaPeople(query: string, num: number, env: NodeJS.ProcessEnv = process.env): Promise<ExaPerson[]> {
+/** One company from Exa's "company" search. */
+export interface ExaCompany {
+  title?: string;
+  url?: string;
+  entities?: { properties?: { name?: string; workforce?: { total?: number | null } | null } }[];
+}
+
+/** Headcount of `company` from Exa company results, or null when Exa doesn't know it. */
+export function exaHeadcount(results: ExaCompany[], company: string): number | null {
+  for (const r of results) {
+    const p = r.entities?.[0]?.properties;
+    const name = p?.name ?? r.title;
+    if (!name || !sameCompany(name, company)) continue;
+    const total = p?.workforce?.total;
+    return typeof total === "number" ? total : null;
+  }
+  return null;
+}
+
+/** Exa search in a category ("people" or "company"). About $0.007 a search. */
+async function searchExa<T>(query: string, category: "people" | "company", num: number, env: NodeJS.ProcessEnv): Promise<T[]> {
   if (!env.EXA_API_KEY) throw new Error("EXA_API_KEY is not set");
   // Billed per request, so a failed one is not retried.
   const res = await request(
@@ -69,9 +88,16 @@ export async function searchExaPeople(query: string, num: number, env: NodeJS.Pr
     {
       method: "POST",
       headers: { "x-api-key": env.EXA_API_KEY, "content-type": "application/json" },
-      body: JSON.stringify({ query, category: "people", numResults: num }),
+      body: JSON.stringify({ query, category, numResults: num }),
     },
     0,
   );
-  return ((await res.json()) as { results?: ExaPerson[] }).results ?? [];
+  return ((await res.json()) as { results?: T[] }).results ?? [];
 }
+
+export const searchExaCompanies = (query: string, num = 3, env: NodeJS.ProcessEnv = process.env) =>
+  searchExa<ExaCompany>(query, "company", num, env);
+
+/** Exa people search. About $0.007 a search; the free tier's monthly credit covers well over 1,000. */
+export const searchExaPeople = (query: string, num: number, env: NodeJS.ProcessEnv = process.env) =>
+  searchExa<ExaPerson>(query, "people", num, env);

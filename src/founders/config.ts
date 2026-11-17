@@ -12,16 +12,18 @@ const foundersSchema = z.object({
   /** Role groups → job titles. A company is emailed when any group has no one in it. */
   role_groups: z.record(z.string(), z.array(z.string().min(2)).min(1)).refine((g) => Object.keys(g).length > 0, "needs a group"),
   max_founders_per_company: z.number().int().positive().default(3),
+  /** Skip companies with more people than this (headcount from Exa). Unknown sizes are kept. */
+  max_employees: z.number().int().positive().default(50),
   /** Companies checked per run, at most; the rest wait for the next run. */
   max_companies: z.number().int().positive().default(20),
   /** Searches per run, at most, for each provider. */
   limits: z
     .object({
-      exa: z.number().int().nonnegative().default(45),
+      exa: z.number().int().nonnegative().default(60),
       google: z.number().int().nonnegative().default(30),
       pdl: z.number().int().nonnegative().default(45),
     })
-    .default({ exa: 45, google: 30, pdl: 45 }),
+    .default({ exa: 60, google: 30, pdl: 45 }),
 });
 
 export type FoundersConfig = z.infer<typeof foundersSchema>;

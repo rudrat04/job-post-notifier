@@ -6,7 +6,7 @@ import { createStore, type SeenRow } from "../store";
 import { allTitles, loadFoundersConfig } from "./config";
 import { buildFoundersDigest, type FounderTarget } from "./email";
 import { companiesFromNews, companyKey, searchFunding, type NewsItem } from "./funding";
-import { exaFounders, exaRoleHolders, searchExaPeople } from "./exa";
+import { exaFounders, exaHeadcount, exaRoleHolders, searchExaCompanies, searchExaPeople } from "./exa";
 import { founderQuery, foundersIn, interleave, roleHoldersIn, rolePattern, roleQuery, searchPhrases } from "./linkedin";
 import { pdlRoleHolder } from "./pdl";
 
@@ -110,14 +110,25 @@ async function main() {
   const targets: FounderTarget[] = [];
   let waiting = 0;
   for (const [i, company] of fresh.entries()) {
-    // Each company needs up to two searches from the main provider.
-    const out = useExa ? used.exa + 2 > config.limits.exa : used.google + 2 > config.limits.google;
+    // Each company needs up to three searches from the main provider.
+    const out = useExa ? used.exa + 3 > config.limits.exa : used.google + 2 > config.limits.google;
     if (out || checked.length >= config.max_companies) {
       waiting = fresh.length - i;
       break;
     }
     const row = (title: string): SeenRow => ({ id: companyId(company.name), company: company.name, title, url: company.url, source: "founders" });
     try {
+      // Headcount first, so a big company costs one search and nothing more.
+      let size: number | null = null;
+      if (useExa) {
+        spend("exa");
+        size = exaHeadcount(await searchExaCompanies(`${company.name}. ${company.headline}`), company.name);
+        if (size !== null && size > config.max_employees) {
+          console.log(`${company.name}: ${size} people, over ${config.max_employees}`);
+          checked.push(row(`too big: ${size} people`));
+          continue;
+        }
+      }
       const found = await findFounders(company.name, company.headline);
       if (!found.founders.length) {
         console.log(`${company.name}: no founder profile found`);
@@ -132,8 +143,8 @@ async function main() {
         checked.push(row(`has every role: ${has.join("; ")}`.slice(0, 500)));
         continue;
       }
-      console.log(`${company.name}: MISSING ${missing.join(", ")} — ${found.founders.map((f) => f.name).join(", ")}${has.length ? ` (has ${has.join("; ")})` : ""}`);
-      targets.push({ company, founders: found.founders, missing, has });
+      console.log(`${company.name} (${size ?? "size unknown"}): MISSING ${missing.join(", ")} — ${found.founders.map((f) => f.name).join(", ")}${has.length ? ` (has ${has.join("; ")})` : ""}`);
+      targets.push({ company, founders: found.founders, missing, has, size });
       checked.push(row(`missing ${missing.join(", ")}; founders: ${found.founders.map((f) => f.name).join(", ")}`.slice(0, 500)));
     } catch (err) {
       // Not recorded, so the company is tried again next run.
@@ -153,7 +164,7 @@ async function main() {
   run.failures = failures;
   run.counts = { companies: companies.length, new: fresh.length, checked: checked.length, gaps: targets.length, exa: used.exa, google: used.google, pdl: used.pdl };
 
-  const digest = buildFoundersDigest(targets, groups.map((g) => g.label), notes);
+  const digest = buildFoundersDigest(targets, groups.map((g) => g.label), notes, config.max_employees);
   if (dryRun) {
     console.log(`\n--- dry run (nothing sent or saved) ---\n${targets.length ? digest.text : "No new founders."}`);
     return;
