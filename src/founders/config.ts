@@ -9,8 +9,8 @@ const foundersSchema = z.object({
     keywords: z.array(z.string()).default(["rais", "funding", "seed", "series [a-c]"]),
     exclude: z.array(z.string()).default([]),
   }),
-  /** Job titles that, if anyone at the company holds one, rule the company out. */
-  roles: z.array(z.string().min(2)).min(1),
+  /** Role groups → job titles. A company is emailed when any group has no one in it. */
+  role_groups: z.record(z.string(), z.array(z.string().min(2)).min(1)).refine((g) => Object.keys(g).length > 0, "needs a group"),
   max_founders_per_company: z.number().int().positive().default(3),
   /** Companies checked per run, at most; the rest wait for the next run. */
   max_companies: z.number().int().positive().default(20),
@@ -18,10 +18,10 @@ const foundersSchema = z.object({
   limits: z
     .object({
       exa: z.number().int().nonnegative().default(45),
-      google: z.number().int().nonnegative().default(20),
-      pdl: z.number().int().nonnegative().default(20),
+      google: z.number().int().nonnegative().default(30),
+      pdl: z.number().int().nonnegative().default(45),
     })
-    .default({ exa: 45, google: 20, pdl: 20 }),
+    .default({ exa: 45, google: 30, pdl: 45 }),
 });
 
 export type FoundersConfig = z.infer<typeof foundersSchema>;
@@ -31,3 +31,6 @@ export async function loadFoundersConfig(path = "config/founders.yaml"): Promise
   if (!result.success) throw new Error(`Invalid config in ${path}:\n${z.prettifyError(result.error)}`);
   return result.data;
 }
+
+/** Every title in every group, in order. */
+export const allTitles = (config: FoundersConfig) => Object.values(config.role_groups).flat();

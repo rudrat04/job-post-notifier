@@ -38,6 +38,10 @@ export function searchPhrases(roles: string[]): string[] {
   return roles.filter((r, i) => !keys.some((k, j) => j !== i && keys[i].includes(k) && (k !== keys[i] || j < i)));
 }
 
+/** [[a1, a2], [b1]] → [a1, b1, a2] */
+export const interleave = <T>(lists: T[][]): T[] =>
+  Array.from({ length: Math.max(0, ...lists.map((l) => l.length)) }, (_, i) => lists.flatMap((l) => (i < l.length ? [l[i]] : []))).flat();
+
 /** Google ignores words past about 32, so the role list is cut to fit, in the configured order. */
 const GOOGLE_WORDS = 28;
 
@@ -90,7 +94,7 @@ function companyPart(company: string): RegExp {
 }
 
 /** Titles that contain "founder" without being one. */
-const NOT_FOUNDER = /founder\/ceo'?s? office|founder'?s'? (?:office|associate)|founders? office|associate to (?:the )?founders?|(?:office|staff) of (?:the )?founders?|founder in residence|founding (?:engineer|member|team|designer|hire)/gi;
+const NOT_FOUNDER = /founder\/ceo'?s? office|ceo'?s? office|office of the (?:ceo|founders?)|founder'?s'? (?:office|associate)|founders? office|associate to (?:the )?founders?|(?:office|staff) of (?:the )?founders?|founder in residence|founding (?:engineer|member|team|designer|hire)/gi;
 const PAST = /(?:ex-?|former(?:ly)?|previously|past)\s*$/i;
 
 /** True when `pattern` appears in the text and isn't introduced as a past job ("ex-Chief of Staff"). */

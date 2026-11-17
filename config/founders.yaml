@@ -1,13 +1,14 @@
-# Founders to cold DM: freshly funded Indian startups whose team shows no one in the roles
-# below on LinkedIn. Run with `npm run founders`; emailed separately from everything else.
+# Founders to cold DM: freshly funded Indian startups missing at least one of the role
+# groups below (GTM, Founder's Office, Product Marketing) on LinkedIn. Run with `npm run founders`; emailed separately from everything else.
 #
 # How it works: Google News funding stories give company names (free). For each company:
 #   1. Exa people search (EXA_API_KEY) finds the founders from LinkedIn work history.
-#   2. A second Exa search looks for anyone currently at the company in one of `roles`.
-#   3. If Exa finds no one, People Data Labs (PDL_API_KEY) gets asked too. That's free when
-#      PDL finds nobody, but its data lags LinkedIn by months, so it only ever adds "has role".
-# Without an Exa key, Google (Serper) does steps 1 and 2 instead. Companies with founders and
-# no one in the roles are emailed. "No one found" is a strong hint, not proof: glance at the
+#   2. A second Exa search looks for anyone currently at the company in the role groups.
+#   3. For each group still empty, People Data Labs (PDL_API_KEY) gets asked. That's free when
+#      PDL finds nobody, but its data lags LinkedIn by months, so it only ever fills a group.
+#   4. One Google (Serper) search double-checks the groups still empty.
+# Without an Exa key, Google does steps 1 and 2 instead. Companies with founders and at least
+# one empty group are emailed. "No one found" is a strong hint, not proof: glance at the
 # company's People tab before you DM.
 
 # Funding stories from Google News.
@@ -26,29 +27,33 @@ news:
   # Headlines matching any of these are dropped: roundups and investors' own funds. Whole words.
   exclude: [roundup, round-up, weekly, this week, funding wrap, fund, first close, venture capital firm, startups raised, startups raise]
 
-# The roles to look for. Each is matched loosely ("Founder's Office" also matches "Founders
-# Office" and "founder’s office"). Most important first: Google reads only about 32 words,
-# so the confirming Google search uses the first ones that fit; Exa and the matching use all.
-roles:
-  - Founder's Office
-  - Chief of Staff
-  - GTM Engineer
-  - Founder's Associate
-  - Product Marketing
-  - GTM Lead
-  - Head of GTM
-  - CEO's Office
-  - Go-to-Market Engineer
-  - GTM Engineering
-  - Founders Office
-  - Founders Associate
-  - Associate to the Founder
-  - Associate to Founder
-  - Founder/CEO Office
-  - Office of the CEO
-  - Product Marketing Manager
-  - Product Marketing Lead
-  - Head of Product Marketing
+# The roles to look for, in groups. A company is emailed when ANY group has no one in it,
+# and the email says which groups are missing. Titles are matched loosely ("Founder's
+# Office" also matches "Founders Office" and "founder’s office"). Within a group, most
+# important first: Google reads only about 32 words, so its search uses the first ones that fit.
+role_groups:
+  GTM:
+    - GTM Engineer
+    - GTM Lead
+    - Head of GTM
+    - Go-to-Market Engineer
+    - GTM Engineering
+  Founder's Office:
+    - Founder's Office
+    - Chief of Staff
+    - Founder's Associate
+    - CEO's Office
+    - Founders Office
+    - Founders Associate
+    - Associate to the Founder
+    - Associate to Founder
+    - Founder/CEO Office
+    - Office of the CEO
+  Product Marketing:
+    - Product Marketing
+    - Product Marketing Manager
+    - Product Marketing Lead
+    - Head of Product Marketing
 
 # Founders listed per company (co-founders included; the CEO counts too).
 max_founders_per_company: 3
@@ -58,12 +63,13 @@ max_companies: 20
 
 # Searches per run, at most, by provider. About 2 per company.
 #   exa:    ~$0.007 each; the free tier's monthly credit covers well over 1,000.
-#   google: Serper: one search to confirm each company that looks like a gap (with an Exa
-#           key), or two per company without one. Its free 2,500 are a one-off allowance
+#   google: Serper: about one per company (founders Exa missed, and the double-check), or
+#           two per company without an Exa key. Its free 2,500 are a one-off allowance
 #           shared with the freelance leads.
-#   pdl:    free plan, about 100 a month, 10 a minute (the run waits between calls).
+#   pdl:    one per empty group; free when nobody's found, 1 credit when someone is.
+#           The free plan allows 10 a minute, so the run waits between calls.
 # Dry runs spend searches too.
 limits:
   exa: 45
-  google: 20
-  pdl: 20
+  google: 30
+  pdl: 45

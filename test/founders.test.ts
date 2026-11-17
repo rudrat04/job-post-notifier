@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { loadFoundersConfig } from "../src/founders/config";
+import { allTitles, loadFoundersConfig } from "../src/founders/config";
 import { buildFoundersDigest } from "../src/founders/email";
 import { companiesFromNews, companyFromHeadline, parseNewsFeed } from "../src/founders/funding";
 import { exaFounders, exaRoleHolders, sameCompany, type ExaPerson } from "../src/founders/exa";
 import { pdlPhrase, pdlQuery } from "../src/founders/pdl";
-import { atCompany, foundersIn, parseProfile, roleHoldersIn, rolePattern, roleQuery } from "../src/founders/linkedin";
+import { interleave, atCompany, foundersIn, parseProfile, roleHoldersIn, rolePattern, roleQuery } from "../src/founders/linkedin";
 
 const config = await loadFoundersConfig("config/founders.yaml");
-const roles = rolePattern(config.roles);
+const roles = rolePattern(allTitles(config));
 
 describe("company from a funding headline", () => {
   it.each([
@@ -97,16 +97,17 @@ describe("LinkedIn results", () => {
 
   it("sends Google only the phrases that add something", async () => {
     const { searchPhrases } = await import("../src/founders/linkedin");
-    const phrases = searchPhrases(config.roles);
+    const phrases = searchPhrases(allTitles(config));
     expect(phrases).toContain("Founder's Office");
     expect(phrases).not.toContain("Founders Office");
     expect(phrases).not.toContain("Product Marketing Manager");
     expect(phrases).toContain("GTM Engineering"); // a different exact phrase from "GTM Engineer"
   });
 
-  it("cuts the Google role search to fit its word limit, most important first", () => {
-    const q = roleQuery("Acme", config.roles);
-    expect(q).toMatch(/^site:linkedin\.com\/in "Acme" \("Founder's Office" OR "Chief of Staff" OR "GTM Engineer"/);
+  it("cuts the Google role search to fit, keeping every group's main titles", () => {
+    const titles = interleave(Object.values(config.role_groups));
+    const q = roleQuery("Acme", titles);
+    expect(q).toMatch(/^site:linkedin\.com\/in "Acme" \("GTM Engineer" OR "Founder's Office" OR "Product Marketing" OR "GTM Lead" OR "Chief of Staff"/);
     expect(q.split(/\s+/).length).toBeLessThanOrEqual(30);
   });
 
@@ -141,6 +142,7 @@ describe("Exa people", () => {
   it("treats a Founder/CEO office title as a role holder, not a founder", () => {
     const giva = [person("Rishi Singh", [["SVP - Strategic Initiatives and Founder/CEO office", "GIVA", null]])];
     expect(exaFounders(giva, "GIVA", 3)).toEqual([]);
+    expect(exaFounders([person("Ankush Garg", [["CEO’s Office", "GIVA", null]])], "GIVA", 3)).toEqual([]);
     expect(exaRoleHolders(giva, "GIVA", roles)).toHaveLength(1);
   });
 
@@ -169,20 +171,24 @@ describe("PDL", () => {
 });
 
 describe("founders email", () => {
-  it("lists founders with LinkedIn links", () => {
+  it("lists founders with LinkedIn links and the missing roles", () => {
     const d = buildFoundersDigest(
       [
         {
           company: { name: "Acme", headline: "Acme raises $2M", url: "https://n/1" },
           founders: [{ name: "Priya Shah", headline: "Co-Founder - Acme", url: "https://www.linkedin.com/in/priya" }],
+          missing: ["GTM", "Product Marketing"],
+          has: ["Founder's Office: Rahul Verma (Chief of Staff)"],
         },
       ],
-      config.roles,
+      Object.keys(config.role_groups),
       ["3 more companies wait for the next run."],
     );
-    expect(d.subject).toMatch(/^1 startup to DM/);
+    expect(d.subject).toMatch(/^1 startup to DM: missing GTM \/ Founder's Office \/ Product Marketing/);
+    expect(d.text).toContain("Missing: GTM, Product Marketing (has Founder's Office: Rahul Verma (Chief of Staff))");
     expect(d.text).toContain("Priya Shah (Co-Founder - Acme): https://www.linkedin.com/in/priya");
     expect(d.text).toContain("linkedin.com/search/results/companies/?keywords=Acme");
+    expect(d.html).toContain("Missing: GTM, Product Marketing");
     expect(d.html).toContain("3 more companies wait");
   });
 });

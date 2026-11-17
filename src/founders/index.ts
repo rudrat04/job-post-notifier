@@ -3,11 +3,11 @@ import { sendEmail } from "../email";
 import { googleSearch, hasSearchKey } from "../leads/sources/websearch";
 import { modeFrom, startRun } from "../runlog";
 import { createStore, type SeenRow } from "../store";
-import { loadFoundersConfig } from "./config";
+import { allTitles, loadFoundersConfig } from "./config";
 import { buildFoundersDigest, type FounderTarget } from "./email";
 import { companiesFromNews, companyKey, searchFunding, type NewsItem } from "./funding";
 import { exaFounders, exaRoleHolders, searchExaPeople } from "./exa";
-import { founderQuery, foundersIn, roleHoldersIn, rolePattern, roleQuery, searchPhrases } from "./linkedin";
+import { founderQuery, foundersIn, interleave, roleHoldersIn, rolePattern, roleQuery, searchPhrases } from "./linkedin";
 import { pdlRoleHolder } from "./pdl";
 
 const args = new Set(process.argv.slice(2));
@@ -47,16 +47,17 @@ async function main() {
   const fresh = companies.filter((c) => !seen.has(companyId(c.name)));
   console.log(`\n${companies.length} companies in the news, ${fresh.length} not checked before`);
 
-  // 2. Per company: find its founders, then look for anyone already in the roles. Exa's
+  // 2. Per company: find its founders, then fill in which role groups have someone. Exa's
   // people search reads LinkedIn work history, so it is used when there is a key; Google
-  // (Serper) is the fallback. PDL is a second opinion on the roles, free when it finds no one.
-  const roles = rolePattern(config.roles);
+  // (Serper) is the fallback and the double-check. PDL is free when it finds no one.
+  const groups = Object.entries(config.role_groups).map(([label, titles]) => ({ label, titles, pattern: rolePattern(titles) }));
+  const roles = rolePattern(allTitles(config));
   const useExa = Boolean(process.env.EXA_API_KEY);
   const usePdl = Boolean(process.env.PDL_API_KEY);
   if (!useExa && !hasSearchKey()) throw new Error("Set EXA_API_KEY (or SERPER_API_KEY / SERPAPI_KEY) to look up founders");
   const used = { exa: 0, google: 0, pdl: 0 };
   const spend = (kind: keyof typeof used) => used[kind]++;
-  const exaPhrases = searchPhrases(config.roles).join(", ");
+  const googleLeft = () => hasSearchKey() && used.google < config.limits.google;
 
   const findFounders = async (name: string, context: string) => {
     if (useExa) {
@@ -64,34 +65,45 @@ async function main() {
       const people = await searchExaPeople(`Founder or co-founder of ${name}. ${context}`, 15);
       const found = { founders: exaFounders(people, name, config.max_founders_per_company), holders: exaRoleHolders(people, name, roles) };
       // Exa misses some profiles; Google often has them ("Building Arborum Labs").
-      if (found.founders.length || !hasSearchKey() || used.google >= config.limits.google) return found;
+      if (found.founders.length || !googleLeft()) return found;
     }
     spend("google");
     const people = await googleSearch(founderQuery(name), undefined, 10);
     return { founders: foundersIn(people, name, config.max_founders_per_company), holders: roleHoldersIn(people, name, roles) };
   };
 
-  const findHolders = async (name: string, context: string): Promise<string[]> => {
+  /** Who fills each group, as far as the searches can tell. Empty groups are the pitch. */
+  const fillGroups = async (name: string, context: string, initial: string[]) => {
+    const filled = new Map<string, string[]>();
+    const add = (holders: string[]) => {
+      for (const h of holders)
+        for (const g of groups) if (g.pattern.test(h)) filled.set(g.label, [...(filled.get(g.label) ?? []), h]);
+    };
+    const empty = () => groups.filter((g) => !filled.has(g.label));
+    add(initial);
+    if (!empty().length) return filled;
+
+    // Interleaved, so a Google search cut short still covers every empty group's main titles.
+    const titles = () => interleave(empty().map((g) => g.titles));
     if (useExa) {
       spend("exa");
-      const holders = exaRoleHolders(await searchExaPeople(`${exaPhrases} at ${name}. ${context}`, 15), name, roles);
-      if (holders.length) return holders;
+      add(exaRoleHolders(await searchExaPeople(`${searchPhrases(titles()).join(", ")} at ${name}. ${context}`, 15), name, roles));
     } else {
       spend("google");
-      const holders = roleHoldersIn(await googleSearch(roleQuery(name, config.roles), undefined, 10), name, roles);
-      if (holders.length) return holders;
+      add(roleHoldersIn(await googleSearch(roleQuery(name, titles()), undefined, 10), name, roles));
     }
-    if (usePdl && used.pdl < config.limits.pdl) {
+    for (const g of empty()) {
+      if (!usePdl || used.pdl >= config.limits.pdl) break;
       spend("pdl");
-      const holder = await pdlRoleHolder(name, config.roles);
-      if (holder) return [`${holder}, per PDL`];
+      const holder = await pdlRoleHolder(name, g.titles);
+      if (holder) filled.set(g.label, [`${holder}, per PDL`]);
     }
-    // Exa misses some people, so a gap is confirmed with one Google search when there's a key.
-    if (useExa && hasSearchKey() && used.google < config.limits.google) {
+    // Exa misses some people, so empty groups get one Google double-check when there's a key.
+    if (useExa && empty().length && googleLeft()) {
       spend("google");
-      return roleHoldersIn(await googleSearch(roleQuery(name, config.roles), undefined, 10), name, roles);
+      add(roleHoldersIn(await googleSearch(roleQuery(name, titles()), undefined, 10), name, roles));
     }
-    return [];
+    return filled;
   };
 
   const checked: SeenRow[] = [];
@@ -112,33 +124,36 @@ async function main() {
         checked.push(row("no founder found"));
         continue;
       }
-      // The founder search often turns up a Founder's Office hire too, which saves a search.
-      const holders = found.holders.length ? found.holders : await findHolders(company.name, company.headline);
-      if (holders.length) {
-        console.log(`${company.name}: has ${holders.slice(0, 2).join(", ")}`);
-        checked.push(row(`has role: ${holders.slice(0, 2).join(", ")}`));
+      const filled = await fillGroups(company.name, company.headline, found.holders);
+      const missing = groups.filter((g) => !filled.has(g.label)).map((g) => g.label);
+      const has = [...filled].map(([label, people]) => `${label}: ${people[0]}`);
+      if (!missing.length) {
+        console.log(`${company.name}: has every role — ${has.join("; ")}`);
+        checked.push(row(`has every role: ${has.join("; ")}`.slice(0, 500)));
         continue;
       }
-      console.log(`${company.name}: GAP — ${found.founders.map((f) => f.name).join(", ")}`);
-      targets.push({ company, founders: found.founders });
-      checked.push(row(`founders: ${found.founders.map((f) => f.name).join(", ")}`));
+      console.log(`${company.name}: MISSING ${missing.join(", ")} — ${found.founders.map((f) => f.name).join(", ")}${has.length ? ` (has ${has.join("; ")})` : ""}`);
+      targets.push({ company, founders: found.founders, missing, has });
+      checked.push(row(`missing ${missing.join(", ")}; founders: ${found.founders.map((f) => f.name).join(", ")}`.slice(0, 500)));
     } catch (err) {
       // Not recorded, so the company is tried again next run.
       console.warn(`${company.name}: FAILED — ${errorMessage(err)}`);
       failures.push(`${company.name} (${errorMessage(err)})`);
     }
   }
+  // The emptiest teams first: missing every role is the strongest pitch.
+  targets.sort((a, b) => b.missing.length - a.missing.length);
 
   const notes: string[] = [];
   if (waiting) notes.push(`${waiting} more companies wait for the next run (per-run limit).`);
   if (failures.length) notes.push(`Couldn't check: ${failures.slice(0, 8).join("; ")}${failures.length > 8 ? ` and ${failures.length - 8} more` : ""}.`);
   console.log(
-    `\nSearches: ${used.exa} Exa, ${used.google} Google, ${used.pdl} PDL. ${checked.length} companies checked, ${targets.length} with no one in the roles`,
+    `\nSearches: ${used.exa} Exa, ${used.google} Google, ${used.pdl} PDL. ${checked.length} companies checked, ${targets.length} missing a role`,
   );
   run.failures = failures;
   run.counts = { companies: companies.length, new: fresh.length, checked: checked.length, gaps: targets.length, exa: used.exa, google: used.google, pdl: used.pdl };
 
-  const digest = buildFoundersDigest(targets, config.roles, notes);
+  const digest = buildFoundersDigest(targets, groups.map((g) => g.label), notes);
   if (dryRun) {
     console.log(`\n--- dry run (nothing sent or saved) ---\n${targets.length ? digest.text : "No new founders."}`);
     return;

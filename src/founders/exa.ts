@@ -30,7 +30,7 @@ export function currentTitlesAt(person: ExaPerson, company: string): string[] {
   );
 }
 
-const NOT_FOUNDER = /founder\/ceo'?s? office|founder'?s'? (?:office|associate)|founders? office|associate to (?:the )?founders?|founder in residence|founding (?:engineer|member|team|designer|hire|gtm)/gi;
+const NOT_FOUNDER = /founder\/ceo'?s? office|ceo'?s? office|office of the (?:ceo|founders?)|founder'?s'? (?:office|associate)|founders? office|associate to (?:the )?founders?|founder in residence|founding (?:engineer|member|team|designer|hire|gtm)/gi;
 const FOUNDER = /(?<![\w])(?:(?:co-?)?founder|ceo)(?![\w])/i;
 
 const linkedinUrl = (url: string) => url.split("?")[0].replace(/^https?:\/\/(?:[a-z]{2,3}\.|www\.)?linkedin\.com/i, "https://www.linkedin.com");
@@ -41,7 +41,7 @@ export function exaFounders(people: ExaPerson[], company: string, max: number): 
   for (const p of people) {
     const name = p.entities?.[0]?.properties?.name ?? p.title;
     if (!name || !p.url || !/linkedin\.com\/in\//i.test(p.url)) continue;
-    const title = currentTitlesAt(p, company).find((t) => FOUNDER.test(t.replace(NOT_FOUNDER, " ")));
+    const title = currentTitlesAt(p, company).find((t) => FOUNDER.test(t.replace(/[’`]/g, "'").replace(NOT_FOUNDER, " ")));
     if (!title) continue;
     const url = linkedinUrl(p.url);
     if (found.some((f) => f.url === url)) continue;
