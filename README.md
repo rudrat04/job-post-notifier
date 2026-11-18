@@ -8,7 +8,7 @@ Checks the public job feeds of Greenhouse, Lever, Ashby and Workable boards for 
 
 ## Setup
 1. Run `supabase/migrations/001_seen_jobs.sql` in your Supabase project.
-   Also run `supabase/migrations/006_run_logs.sql`: every run of every script (jobs, leads, events, prospects, founders) adds a row to `run_logs` with its status (`ok`, `partial` when some sources failed, `failed` when it crashed), counts and the reasons sources failed. That includes runs that sent no email, so it's where to look when a digest is quiet or missing. Without the table, runs still work and print one warning.
+   Also run `supabase/migrations/006_run_logs.sql`: every run of every script (jobs, prospects, founders) adds a row to `run_logs` with its status (`ok`, `partial` when some sources failed, `failed` when it crashed), counts and the reasons sources failed. That includes runs that sent no email, so it's where to look when a digest is quiet or missing. Without the table, runs still work and print one warning.
 2. Copy `.env.example` to `.env` and fill it in. The keys are under Supabase → Project Settings → API (service role key) and on resend.com.
 3. `npm install`
 4. `npm run dry-run`: fetches, filters and prints the digest. It sends and saves nothing, and needs no keys.
@@ -36,15 +36,6 @@ Freelance, contract and fractional roles (a title with a word like "fractional",
 
 For employers' own boards, `npm run discover` reads company names from `config/candidates.txt`, finds which have a Greenhouse, Lever, Ashby or Workable board with a job in your locations, and writes them to `config/discovered.yaml`, which the daily run also checks. It takes about 10 minutes.
 
-## Freelance leads
-`npm run leads` finds people and companies asking for a freelance or fractional GTM engineer or automation builder, and emails them separately from the job digest. Everything is set in `config/leads.yaml`.
-- **n8n and Make forums**: new posts in the n8n community's Jobs section and Make's Hire a Pro section. No key needed.
-- **Reddit**: one search across GTM, sales, e-commerce and automation subreddits. Without a key it uses the public feed, which Reddit often blocks from GitHub's servers; a free Reddit "script" app (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`) makes it reliable.
-- **Hacker News** posts and comments, through the free Algolia search.
-- **LinkedIn and Reddit posts via Google** (Serper, `SERPER_API_KEY`, with SerpApi's `SERPAPI_KEY` as a fallback): 6 searches a run. Skipped without a key.
-
-A post counts only when it explicitly asks for help with a service in the list: in the first person ("we're looking for a HubSpot consultant", "I need someone to…"), as a question to the crowd ("can anyone recommend…"), or as a sentence that opens with the ask ("Looking for a GTM engineer", "n8n expert needed"). Talk about a role ("every founder needs a RevOps expert") isn't an ask. Adverts and promotion, job seekers ("looking for freelance work", "open to opportunities"), surveys, partnership hunts and full-time job posts are dropped. Freelancer.com projects only need to name a service, and in Hacker News "Who is hiring" threads only contract and fractional roles count. `npm run leads:dry-run` prints without sending or saving. The workflow `leads.yml` is meant to be started daily by cron-job.org. Sent leads are remembered in the `seen_leads` table (`supabase/migrations/004_seen_leads.sql`).
-
 ## Founders to DM
 `npm run founders` emails a separate list of founders at freshly funded Indian startups that are missing at least one of three role groups on LinkedIn: **GTM** (GTM Engineer, GTM Lead), **Founder's Office** (Founder's Office, Founder's Associate, Chief of Staff, CEO's Office) and **Product Marketing**. Each entry says which groups are missing and who fills the others, with the founders' names, their LinkedIn profiles and a LinkedIn search link for the company, ready for a cold DM. Companies missing the most roles come first. The groups and their titles are set in `config/founders.yaml`.
 - Company names come from Google News funding stories from the past 7 days (free).
@@ -68,11 +59,3 @@ A run checks up to 20 companies, with per-provider caps under `limits`; the rest
 **Staying in Google's free tier.** Asking for website, rating and reviews puts each request in the "Text Search Enterprise + Atmosphere" SKU, which has 1,000 free requests a month. Every request is counted in the `maps_usage` table before it is sent, and a run stops at 40 requests or at 200 for the month, whichever comes first. Failed requests are not retried and no second pages are fetched. Only Google place IDs are stored (`seen_places`), as Google's terms allow; names, addresses and reviews are not kept. Tables: `supabase/migrations/005_prospects.sql`.
 
 `npm run prospects:dry-run` prints without emailing, but its requests still count. The workflow `prospects.yml` is meant to be started weekly by cron-job.org.
-
-## Free events
-`npm run events` finds free tech, product and marketing events with registration still open and emails them. It sends nothing when there is no new event. Everything is set in `config/events.yaml`.
-- **In person** in Mumbai, Pune, Ahmedabad and Bengaluru, from [Luma](https://luma.com): free, not full, no waitlist.
-- **Virtual** events from [Meetup](https://www.meetup.com)'s online search, free with RSVP open. Eventbrite is not used because it blocks GitHub's servers.
-- Events starting within 30 days whose title or host matches `topics` and not `exclude`. The email puts **Big events** first: a well-known company organizing on Luma (brand list in `config/events.yaml`) or at least 200 people registered. Everything else is under **Other events**. The same event on both sites, or a session repeated on many dates, is sent once.
-
-`npm run events:dry-run` prints without sending or saving; add `-- --all` to include events already emailed. The workflow `events.yml` is started by cron-job.org at 09:00 IST. Sent events are remembered in the `seen_events` table (`supabase/migrations/003_seen_events.sql`).

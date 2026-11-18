@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { sendEmail } from "../email";
-import { googleSearch, hasSearchKey } from "../leads/sources/websearch";
+import { googleSearch, hasSearchKey } from "./search";
 import { modeFrom, startRun } from "../runlog";
 import { createStore, type SeenRow } from "../store";
 import { allTitles, loadFoundersConfig } from "./config";

@@ -1,5 +1,5 @@
 import { htmlToText } from "../http";
-import type { SearchResult } from "../leads/sources/websearch";
+import type { SearchResult } from "./search";
 
 /** Someone's public LinkedIn profile, as Google shows it. */
 export interface Profile {

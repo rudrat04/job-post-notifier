@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-export type Script = "jobs" | "leads" | "events" | "prospects" | "founders";
+export type Script = "jobs" | "prospects" | "founders";
 
 const WRITE_TIMEOUT_MS = 10_000;
 
